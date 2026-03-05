@@ -31,29 +31,28 @@ object JsoniterSyntaticSugar {
   def fromJsonString[A](s: String)(implicit codec: JsonValueCodec[A]): A =
     fromJsonBytes[A](s.getBytes(StandardCharsets.UTF_8))
 
-  def read(value: String): Json =readFromString(value)
+  def read(value: String): Json = readFromString(value)
 
-  def read2(value: Array[Byte]): Json =readFromArray(value)
-val quoteRequest =read("{\"amountMUR\": 1000.50}")
+  def read2(value: Array[Byte]): Json = readFromArray(value)
+  val quoteRequest = read("{\"amountMUR\": 1000.50}")
 
+  val quoteRequest2 = quoteRequest.as[QuoteService2.QuoteRequest]
 
-val quoteRequest2=quoteRequest.as[QuoteService2.QuoteRequest]
+  val routeOption = QuoteService2.RouteOption(
+    "Chained: MUR→USD→USDT→XAF",
+    List("MUR→USD", "USD→USDT", "USDT→XAF"),
+    List(BigDecimal("0.03"), BigDecimal("0.015"), BigDecimal("0.04")),
+    BigDecimal("22000.00"),
+    BigDecimal("5.1234")
+  )
+  val json = toJsonString(routeOption)
 
-val routeOption = QuoteService2.RouteOption(
-  "Chained: MUR→USD→USDT→XAF",
-  List("MUR→USD", "USD→USDT", "USDT→XAF"),
-  List(BigDecimal("0.03"), BigDecimal("0.015"), BigDecimal("0.04")),
-  BigDecimal("22000.00"),
-  BigDecimal("5.1234")
-)
-val json=toJsonString(routeOption)
-
-val decodedRouteOption=fromJsonString[QuoteService2.RouteOption](json)
+  val decodedRouteOption = fromJsonString[QuoteService2.RouteOption](json)
 
 //QuoteService2.RouteOption=>Json
-routeOption.asJson
+  routeOption.asJson
 
-writeToString(routeOption.asJson)
+  writeToString(routeOption.asJson)
 
 }
 
@@ -72,15 +71,15 @@ object QuoteService2 {
   implicit val sendResultCodec: JsonValueCodec[SendResult] =
     JsonCodecMaker.make[SendResult]
 
-implicit val quoteRequestDecoder: Decoder[QuoteRequest] = deriveDecoder
-implicit val quoteRequestEncoder: Encoder[QuoteRequest] = deriveEncoder
+  implicit val quoteRequestDecoder: Decoder[QuoteRequest] = deriveDecoder
+  implicit val quoteRequestEncoder: Encoder[QuoteRequest] = deriveEncoder
 
-implicit val routeOptionDecoder: Decoder[RouteOption] = deriveDecoder
-implicit val routeOptionEncoder: Encoder[RouteOption] = deriveEncoder
-implicit val sendRequestDecoder: Decoder[SendRequest] = deriveDecoder
-implicit val sendRequestEncoder: Encoder[SendRequest] = deriveEncoder
-implicit val sendResultDecoder: Decoder[SendResult] = deriveDecoder
-implicit val sendResultEncoder: Encoder[SendResult] = deriveEncoder
+  implicit val routeOptionDecoder: Decoder[RouteOption] = deriveDecoder
+  implicit val routeOptionEncoder: Encoder[RouteOption] = deriveEncoder
+  implicit val sendRequestDecoder: Decoder[SendRequest] = deriveDecoder
+  implicit val sendRequestEncoder: Encoder[SendRequest] = deriveEncoder
+  implicit val sendResultDecoder: Decoder[SendResult] = deriveDecoder
+  implicit val sendResultEncoder: Encoder[SendResult] = deriveEncoder
 
   case class QuoteRequest(amountMUR: BigDecimal)
   case class RouteOption(

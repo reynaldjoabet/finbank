@@ -1,6 +1,4 @@
-object AuthenticationService {
-  
-}
+object AuthenticationService {}
 
 abstract class AuthenticationService(userSessionManager: UserSessionManager) {
   def authenticate(username: String, password: String): Option[String] = {

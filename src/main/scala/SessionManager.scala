@@ -1,6 +1,4 @@
-object SessionManager {
-  
-}
+object SessionManager {}
 
 abstract class SessionManager {
   def createSession(userId: String): String

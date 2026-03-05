@@ -18,18 +18,18 @@ object HttpRoutes {
     case GET -> Root => Ok("CorridorOne - MUR -> Cameroon Remit API (http4s)")
 
     case req @ POST -> Root / "api" / "quote" =>
-      for
+      for {
         body <- req.as[QuoteService.QuoteRequest]
         quotes = QuoteService.bestQuotes(body)
         resp <- Ok(quotes)
-      yield resp
+      } yield resp
 
     case req @ POST -> Root / "api" / "send" =>
-      for
+      for {
         body <- req.as[QuoteService.SendRequest]
         res = QuoteService.executeSend(body)
         resp <- Ok(res)
-      yield resp
+      } yield resp
 
   }
 

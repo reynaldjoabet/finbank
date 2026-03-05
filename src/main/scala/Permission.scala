@@ -63,7 +63,7 @@ object Permission {
     prerequisitePermissions = Set(
       PrerequisitePermission(ResourceType.USER, Action.READ)
     )
-  ) 
+  )
 
   val userResourcePermissions = """[
   {
@@ -363,7 +363,7 @@ object Permission {
       name = "View Role",
       description = "Allows user to read/view a role.",
       permissionValidOnResource = false,
-      prerequisitePermissions = Set.empty  
+      prerequisitePermissions = Set.empty
     ),
     Permission(
       resourceType = ResourceType.ROLE,
@@ -538,6 +538,5 @@ object Permission {
         PrerequisitePermission(ResourceType.UNIVERSE, Action.READ)
       )
     )
-  
   )
 }

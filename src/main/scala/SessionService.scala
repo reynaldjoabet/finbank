@@ -1,5 +1,3 @@
-
-
 object SessionService {
   def createSession(userId: String): String = {
     // Placeholder for session creation logic
