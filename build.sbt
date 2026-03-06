@@ -48,7 +48,7 @@ lazy val root = (project in file("."))
       circeParser
     )
   )
-  .aggregate(unityPay, njangi, billing, coinstar, migrantbank, wallet)
+  .aggregate(unityPay, njangi, billing, coinstar, migrantbank, wallet, revenue)
 
 val commonDependencies = Seq(
   sttpCore,
@@ -133,6 +133,18 @@ val migrantbank = (project in file("migrantbank"))
 val wallet = (project in file("wallet"))
   .settings(
     name := "wallet",
+    libraryDependencies ++= commonDependencies ++ Seq(
+      quill,
+      hikaricp,
+      flyway,
+      jwtZioJson
+    ),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+  )
+
+lazy val revenue = (project in file("revenue"))
+  .settings(
+    name := "revenue",
     libraryDependencies ++= commonDependencies ++ Seq(
       quill,
       hikaricp,
