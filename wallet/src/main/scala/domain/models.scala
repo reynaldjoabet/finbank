@@ -6,26 +6,35 @@ import java.util.UUID
 
 opaque type MerchantId = UUID
 object MerchantId {
+  def apply(uuid: UUID): MerchantId = uuid
+  def unapply(id: MerchantId): UUID = id
   def random: MerchantId = UUID.randomUUID()
   def fromUUID(uuid: UUID): MerchantId = uuid
-  given JsonCodec[MerchantId] =
-    JsonCodec.uuid.transform[MerchantId](fromUUID, identity)
+
+  given CanEqual[MerchantId, MerchantId] = CanEqual.derived
+  given JsonCodec[MerchantId] = JsonCodec.uuid
 }
 
 opaque type InvoiceId = UUID
 object InvoiceId {
+  def apply(uuid: UUID): InvoiceId = uuid
+  def unapply(id: InvoiceId): UUID = id
   def random: InvoiceId = UUID.randomUUID()
   def fromUUID(uuid: UUID): InvoiceId = uuid
-  given JsonCodec[InvoiceId] =
-    JsonCodec.uuid.transform[InvoiceId](fromUUID, identity)
+
+  given CanEqual[InvoiceId, InvoiceId] = CanEqual.derived
+  given JsonCodec[InvoiceId] = JsonCodec.uuid
 }
 
 opaque type PaymentId = UUID
 object PaymentId {
+  def apply(uuid: UUID): PaymentId = uuid
+  def unapply(id: PaymentId): UUID = id
   def random: PaymentId = UUID.randomUUID()
   def fromUUID(uuid: UUID): PaymentId = uuid
-  given JsonCodec[PaymentId] =
-    JsonCodec.uuid.transform[PaymentId](fromUUID, identity)
+
+  given CanEqual[PaymentId, PaymentId] = CanEqual.derived
+  given JsonCodec[PaymentId] = JsonCodec.uuid
 }
 
 final case class Money(amountMinor: Long, currency: String)
@@ -33,17 +42,21 @@ object Money {
   given JsonCodec[Money] = DeriveJsonCodec.gen[Money]
 }
 
-enum Provider {
+enum Provider derives CanEqual {
   case MtnMomo, OrangeMoney, MPesa, AirtelMoney, Sandbox
 }
 object Provider {
   given JsonCodec[Provider] = DeriveJsonCodec.gen[Provider]
 }
 
-enum InvoiceStatus { case Unpaid, PartiallyPaid, Paid, Cancelled }
+enum InvoiceStatus derives CanEqual {
+  case Unpaid, PartiallyPaid, Paid, Cancelled
+}
 object InvoiceStatus { given JsonCodec[InvoiceStatus] = DeriveJsonCodec.gen }
 
-enum PaymentStatus { case Initiated, PendingProvider, Succeeded, Failed }
+enum PaymentStatus derives CanEqual {
+  case Initiated, PendingProvider, Succeeded, Failed
+}
 object PaymentStatus { given JsonCodec[PaymentStatus] = DeriveJsonCodec.gen }
 
 final case class Invoice(

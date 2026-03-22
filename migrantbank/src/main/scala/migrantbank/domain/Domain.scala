@@ -5,32 +5,34 @@ import java.time.Instant
 import java.util.UUID
 import com.augustnagro.magnum.DbCodec
 
+given CanEqual[UUID, UUID] = CanEqual.derived
+
 final case class Money(amountMinor: Long, currency: String)
     derives JsonEncoder,
       JsonDecoder
 
-enum KycStatus derives JsonEncoder, JsonDecoder, DbCodec {
+enum KycStatus derives JsonEncoder, JsonDecoder, DbCodec, CanEqual {
   case PENDING, VERIFIED, REJECTED, MANUAL_REVIEW_REQUIRED
 }
-enum CardKind derives JsonEncoder, JsonDecoder {
+enum CardKind derives JsonEncoder, JsonDecoder, CanEqual {
   case VIRTUAL, PHYSICAL
 }
-enum CardStatus derives JsonEncoder, JsonDecoder {
+enum CardStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case ACTIVE, BLOCKED, CLOSED
 }
-enum DeliveryStatus derives JsonEncoder, JsonDecoder {
+enum DeliveryStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case NOT_ORDERED, ORDERED, SHIPPED, DELIVERED, FAILED
 }
-enum TransferType derives JsonEncoder, JsonDecoder {
+enum TransferType derives JsonEncoder, JsonDecoder, CanEqual {
   case P2P, ACH
 }
-enum TransferStatus derives JsonEncoder, JsonDecoder {
+enum TransferStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case PROCESSING, COMPLETED, FAILED
 }
-enum LoanStatus derives JsonEncoder, JsonDecoder {
+enum LoanStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case OFFERED, ACTIVE, REPAID, DEFAULTED
 }
-enum TicketStatus derives JsonEncoder, JsonDecoder {
+enum TicketStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case OPEN, IN_PROGRESS, CLOSED
 }
 final case class UserProfile(

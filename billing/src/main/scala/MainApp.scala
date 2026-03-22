@@ -11,15 +11,15 @@ import java.time.Instant
 // Domain (pure)
 // =======================
 
-enum InvoiceStatus {
+enum InvoiceStatus derives CanEqual {
   case Draft, Issued, Paid, Voided
 }
 
-enum PaymentStatus {
+enum PaymentStatus derives CanEqual {
   case Pending, Failed, Settled
 }
 
-enum KybStatus {
+enum KybStatus derives CanEqual {
   case NotStarted, Submitted, Approved, Rejected
 }
 

@@ -7,10 +7,13 @@ package object domain {
   opaque type InvoiceId = UUID
   object InvoiceId {
     def apply(uuid: UUID): InvoiceId = uuid
+    def unapply(id: InvoiceId): UUID = id
     def random: UIO[InvoiceId] = ZIO.succeed(UUID.randomUUID())
+
+    given CanEqual[InvoiceId, InvoiceId] = CanEqual.derived
   }
 
-  enum PaymentStatus {
+  enum PaymentStatus derives CanEqual {
     case Pending, Processing, Succeeded, Failed
   }
 
@@ -72,52 +75,58 @@ package object domain {
   opaque type MemberId = String
   object MemberId {
     def apply(s: String): MemberId = s
-    extension (id: MemberId) def value: String = id
-    given JsonEncoder[MemberId] =
-      JsonEncoder.string.contramap[MemberId](_.value)
+    def unapply(id: MemberId): String = id
+
+    given CanEqual[MemberId, MemberId] = CanEqual.derived
+    given JsonEncoder[MemberId] = JsonEncoder.string
     given JsonDecoder[MemberId] = JsonDecoder.string
   }
 
   opaque type TenantId = String
   object TenantId {
     def apply(s: String): TenantId = s
-    extension (id: TenantId) def value: String = id
-    given JsonEncoder[TenantId] =
-      JsonEncoder.string.contramap[TenantId](_.value)
+    def unapply(id: TenantId): String = id
+
+    given CanEqual[TenantId, TenantId] = CanEqual.derived
+    given JsonEncoder[TenantId] = JsonEncoder.string
     given JsonDecoder[TenantId] = JsonDecoder.string
   }
 
   opaque type UserId = String
   object UserId {
     def apply(s: String): UserId = s
-    extension (id: UserId) def value: String = id
-    given JsonEncoder[UserId] = JsonEncoder.string.contramap[UserId](_.value)
+    def unapply(id: UserId): String = id
+
+    given CanEqual[UserId, UserId] = CanEqual.derived
+    given JsonEncoder[UserId] = JsonEncoder.string
     given JsonDecoder[UserId] = JsonDecoder.string
   }
 
   opaque type PaymentId = String
   object PaymentId {
     def apply(s: String): PaymentId = s
-    extension (id: PaymentId) def value: String = id
-    given JsonEncoder[PaymentId] =
-      JsonEncoder.string.contramap[PaymentId](_.value)
+    def unapply(id: PaymentId): String = id
+
+    given CanEqual[PaymentId, PaymentId] = CanEqual.derived
+    given JsonEncoder[PaymentId] = JsonEncoder.string
     given JsonDecoder[PaymentId] = JsonDecoder.string
   }
 
   opaque type Money = BigDecimal // scala bigdecimal
   object Money {
     def apply(amount: BigDecimal): Money = amount
-    extension (m: Money) def value: BigDecimal = m
-    given JsonEncoder[Money] =
-      JsonEncoder.scalaBigDecimal.contramap[Money](_.value)
-    given JsonDecoder[Money] = JsonDecoder.bigDecimal.map(Money(_))
+    def unapply(m: Money): BigDecimal = m
+
+    given CanEqual[Money, Money] = CanEqual.derived
+    given JsonEncoder[Money] = JsonEncoder.scalaBigDecimal
+    given JsonDecoder[Money] = JsonDecoder.scalaBigDecimal
   }
 
-  enum PaymentRail derives JsonCodec {
+  enum PaymentRail derives JsonCodec, CanEqual {
     case MTN_MOMO
     case ORANGE_MONEY
   }
-  enum PaymentStatus2 derives JsonCodec {
+  enum PaymentStatus2 derives JsonCodec, CanEqual {
     case PENDING
     case SUBMITTED
     case FAILED

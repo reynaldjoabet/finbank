@@ -1,6 +1,6 @@
 package coinstar.wallet.persistence
 
-import coinstar.wallet.domain.DomainError
+import coinstar.wallet.domain.{DomainError, given}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*

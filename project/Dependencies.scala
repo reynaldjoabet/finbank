@@ -14,16 +14,16 @@ object Dependencies {
 
     // --- HTTP / API ---
     val http4s = "0.23.33"
-    val sttp4 = "4.0.15"
-    val tapir = "1.10.6"
+    val sttp4 = "4.0.19"
+    val tapir = "1.13.13"
 
     // --- JSON / Serialization ---
-    val jsoniter = "2.38.8"
+    val jsoniter = "2.38.9"
     val circe = "0.14.14"
 
     // --- Typelevel / FP ---
-    val catsEffect = "3.6.3"
-    val fs2 = "3.12.2"
+    val catsEffect = "3.7.0"
+    val fs2 = "3.13.0"
     val fs2Kafka = "3.9.1"
     val chimney = "1.8.2"
 
@@ -32,9 +32,9 @@ object Dependencies {
     val magnum = "2.0.0-M2"
     val quill = "4.8.6"
     val hikaricp = "7.0.2"
-    val flyway = "12.0.1"
+    val flyway = "12.1.1"
     val skunk = "1.1.0-M3"
-    val postgres = "42.7.9"
+    val postgres = "42.7.10"
 
     // --- Auth / Security ---
     val jwtScala = "11.0.3"
@@ -45,19 +45,20 @@ object Dependencies {
     val nimbusOidc = "11.33"
 
     // --- Logging ---
-    val scribe = "3.16.1"
+    val scribe = "3.18.0"
     val slf4j = "2.0.17"
-    val logback = "1.5.22"
+    val logback = "1.5.32"
 
     // --- Caching ---
     val caffeine = "3.2.3"
 
     // --- Config ---
-    val pureconfig = "0.17.9"
+    val pureconfig = "0.17.10"
 
     // --- Testing ---
-    val munit = "1.2.2"
+    val munit = "1.2.4"
     val scalacheck = "1.17.0"
+    val scalaTest = "3.2.19"
   }
 
   // ---------------------------------------------------------------------------
@@ -74,6 +75,9 @@ object Dependencies {
 
   private def circe(artifact: String): ModuleID =
     "io.circe" %% s"circe-$artifact" % Version.circe
+
+  private def doobie(artifact: String): ModuleID =
+    "org.tpolecat" %% s"doobie-$artifact" % Version.doobie
 
   // ---------------------------------------------------------------------------
   // ZIO core
@@ -134,6 +138,13 @@ object Dependencies {
   lazy val clientBackendFs2 = sttp("async-http-client-backend-fs2")
   lazy val http4sBackend = sttp("http4s-backend")
   lazy val zioSttp = sttp("zio")
+
+  // Tapir
+  lazy val tapirCore = tapir("core")
+  lazy val tapirHttp4sServer = tapir("http4s-server")
+  lazy val tapirJsoniterScala = tapir("jsoniter-scala")
+  lazy val tapirOpenAPIDocs = tapir("openapi-docs")
+  lazy val tapirSwaggerUIBundle = tapir("swagger-ui-bundle")
 
   // ---------------------------------------------------------------------------
   // JSON / Serialization
@@ -204,7 +215,7 @@ object Dependencies {
   lazy val scribeCats = "com.outr" %% "scribe-cats" % Version.scribe
   lazy val slf4j = "org.slf4j" % "slf4j-api" % Version.slf4j
   lazy val logback =
-    "ch.qos.logback" % "logback-classic" % Version.logback % Runtime
+    "ch.qos.logback" % "logback-classic" % Version.logback
 
   // ---------------------------------------------------------------------------
   // Config
@@ -216,7 +227,7 @@ object Dependencies {
   // Testing
   // ---------------------------------------------------------------------------
   lazy val munit = "org.scalameta" %% "munit" % Version.munit
-
+  lazy val scalaTest = "org.scalatest" %% "scalatest" % Version.scalaTest
   // ---------------------------------------------------------------------------
   // Tasks
   // ---------------------------------------------------------------------------

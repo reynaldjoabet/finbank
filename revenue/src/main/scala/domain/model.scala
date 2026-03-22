@@ -3,7 +3,7 @@ package revenue.domain
 import zio.json.*
 import revenue.domain.ids.*
 
-enum Role derives JsonCodec {
+enum Role derives JsonCodec, CanEqual {
   case Taxpayer, Agent, Officer, Admin
 }
 
@@ -13,9 +13,9 @@ final case class Principal(
     actingTaxpayerId: Option[TaxpayerId]
 ) derives JsonCodec
 
-enum TaxpayerKind derives JsonCodec { case Individual, Business }
+enum TaxpayerKind derives JsonCodec, CanEqual { case Individual, Business }
 
-enum TaxType derives JsonCodec {
+enum TaxType derives JsonCodec, CanEqual {
   case IncomeTax, VAT, Payroll_PAYE_CSG_NSF, CustomsDuty, Excise, GamblingTax,
     Levy
 }
@@ -45,7 +45,7 @@ final case class TaxpayerRegistration(
 ) derives JsonCodec
 
 // Returns lifecycle (draft -> validated -> submitted -> amended)
-enum ReturnStatus derives JsonCodec {
+enum ReturnStatus derives JsonCodec, CanEqual {
   case Draft, Validated, Submitted, Assessed, Rejected
 }
 
@@ -79,7 +79,7 @@ final case class TaxReturn(
 ) derives JsonCodec
 
 // Assessment & liabilities
-enum LiabilityStatus derives JsonCodec { case Open, Paid, Cancelled }
+enum LiabilityStatus derives JsonCodec, CanEqual { case Open, Paid, Cancelled }
 
 final case class AssessmentCreate(
     returnId: ReturnId
@@ -117,8 +117,10 @@ final case class LiabilityRecalcResult(
 ) derives JsonCodec
 
 // Payments
-enum PaymentMethod derives JsonCodec { case DirectDebit, Card, BankTransfer }
-enum PaymentStatus derives JsonCodec { case Pending, Settled, Failed }
+enum PaymentMethod derives JsonCodec, CanEqual {
+  case DirectDebit, Card, BankTransfer
+}
+enum PaymentStatus derives JsonCodec, CanEqual { case Pending, Settled, Failed }
 
 final case class PaymentIntentCreate(
     taxpayerId: TaxpayerId,
@@ -153,7 +155,7 @@ final case class Receipt(
 ) derives JsonCodec
 
 // Refunds
-enum RefundStatus derives JsonCodec {
+enum RefundStatus derives JsonCodec, CanEqual {
   case Draft, Submitted, Approved, Rejected, Paid
 }
 
@@ -184,7 +186,9 @@ final case class RefundDecision(
 ) derives JsonCodec
 
 // Objections
-enum ObjectionStatus derives JsonCodec { case Submitted, Withdrawn, Resolved }
+enum ObjectionStatus derives JsonCodec, CanEqual {
+  case Submitted, Withdrawn, Resolved
+}
 
 final case class ObjectionCreate(
     taxpayerId: TaxpayerId,

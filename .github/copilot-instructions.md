@@ -32,12 +32,26 @@
   ```scala
   opaque type FooId = UUID
   object FooId {
+    def apply(value: UUID): FooId = value
+    def unapply(id: FooId): UUID = id
     def make: UIO[FooId] = Random.nextUUID
-    def fromUUID(uuid: UUID): FooId = uuid
     def fromString(s: String): Option[FooId] = Try(UUID.fromString(s)).toOption
-    extension (id: FooId) def value: UUID = id
-    given JsonEncoder[FooId] = JsonEncoder.uuid.contramap[FooId](_.value)
+
+    given CanEqual[FooId, FooId] = CanEqual.derived
+    given JsonEncoder[FooId] = JsonEncoder.uuid
     given JsonDecoder[FooId] = JsonDecoder.uuid
+  }
+  ```
+- For `String`-backed opaque types:
+  ```scala
+  opaque type TenantId = String
+  object TenantId {
+    def apply(value: String): TenantId = value
+    def unapply(id: TenantId): String = id
+
+    given CanEqual[TenantId, TenantId] = CanEqual.derived
+    given JsonEncoder[TenantId] = JsonEncoder.string
+    given JsonDecoder[TenantId] = JsonDecoder.string
   }
   ```
 
@@ -53,6 +67,14 @@
 - Use **enums** for statuses, kinds, and categorical types.
 - Store monetary amounts as **`Long` minor units** (cents/centimes), not `BigDecimal`.
 - Use `Instant` (from `java.time`) for timestamps — never `Date` or epoch millis.
+- **Never use case class wrappers** for simple ID/value types — always use **opaque types**. Case classes add runtime overhead (allocation, boxing). Opaque types are zero-cost at runtime:
+  ```scala
+  // GOOD — zero-cost opaque type
+  opaque type CustomerId = String
+
+  // BAD — unnecessary runtime wrapper
+  case class CustomerId(value: String)
+  ```
 
 ## JSON — zio-json
 
@@ -145,3 +167,18 @@
 - Use `given` / `derives` — never `implicit`.
 - Use `extension` methods — never implicit classes.
 - Use `for { ... } yield` for ZIO pipelines with multiple steps.
+- Enable **multiversal equality** (`import scala.language.strictEquality`). Universal `==` / `!=` is a source of silent bugs (e.g. `person == cat` compiles but is always `false`).
+  - Declare `CanEqual` instances for every type that should be comparable. For opaque types, provide a `given` in the companion:
+    ```scala
+    opaque type UserId = UUID
+    object UserId {
+      given CanEqual[UserId, UserId] = CanEqual.derived
+    }
+    ```
+  - For enum types:
+    ```scala
+    enum Status derives CanEqual {
+      case Active, Suspended, Closed
+    }
+    ```
+  - Never use `@unchecked` or cast to bypass equality checks — fix the missing `CanEqual` instance instead.

@@ -9,7 +9,7 @@ import zio.*
 import zio.json.*
 import java.time.LocalDate
 
-enum PaymentStatus {
+enum PaymentStatus derives CanEqual {
   case Succeeded, Pending, Failed
 }
 
@@ -30,53 +30,68 @@ given JsonDecoder[LocalDate] = JsonDecoder[String].map(LocalDate.parse)
 // ---------- Opaque IDs ----------
 opaque type CircleId = UUID
 object CircleId {
+  def apply(uuid: UUID): CircleId = uuid
+  def unapply(id: CircleId): UUID = id
   def fromUUID(uuid: UUID): CircleId = uuid
   def fromString(s: String): Option[CircleId] =
     scala.util.Try(UUID.fromString(s)).toOption
   def random: UIO[CircleId] = Random.nextUUID
+
   extension (id: CircleId) def value: UUID = id
 
-  given JsonEncoder[CircleId] = JsonEncoder.uuid.contramap[CircleId](_.value)
-  given JsonDecoder[CircleId] = JsonDecoder.uuid.map(fromUUID)
-//   given JsonEncoder[CircleId] = JsonEncoder[UUID].contramap[CircleId](fromUUID)
-//   given JsonDecoder[CircleId] = JsonDecoder[UUID].map(identity)
+  given CanEqual[CircleId, CircleId] = CanEqual.derived
+  given JsonEncoder[CircleId] = JsonEncoder.uuid
+  given JsonDecoder[CircleId] = JsonDecoder.uuid
 }
 opaque type MemberId = UUID
 object MemberId {
-
+  def apply(uuid: UUID): MemberId = uuid
+  def unapply(id: MemberId): UUID = id
   def fromUUID(uuid: UUID): MemberId = uuid
   def fromString(s: String): Option[MemberId] =
     scala.util.Try(UUID.fromString(s)).toOption
   def random: UIO[MemberId] = Random.nextUUID
+
   extension (id: MemberId) def value: UUID = id
 
-  given JsonEncoder[MemberId] = JsonEncoder.uuid.contramap[MemberId](_.value)
+  given CanEqual[MemberId, MemberId] = CanEqual.derived
+  given JsonEncoder[MemberId] = JsonEncoder.uuid
   given JsonDecoder[MemberId] = JsonDecoder.uuid
 }
 opaque type ContributionId = UUID
 object ContributionId {
+  def apply(uuid: UUID): ContributionId = uuid
+  def unapply(id: ContributionId): UUID = id
   def fromUUID(uuid: UUID): ContributionId = uuid
   def random: UIO[ContributionId] = Random.nextUUID
+
   extension (id: ContributionId) def value: UUID = id
-  given JsonEncoder[ContributionId] =
-    JsonEncoder.uuid.contramap[ContributionId](_.value)
+
+  given CanEqual[ContributionId, ContributionId] = CanEqual.derived
+  given JsonEncoder[ContributionId] = JsonEncoder.uuid
   given JsonDecoder[ContributionId] = JsonDecoder.uuid
 }
 
 opaque type MobileMoneyTxId = String
 object MobileMoneyTxId {
   def apply(s: String): MobileMoneyTxId = s
+  def unapply(id: MobileMoneyTxId): String = id
+
   extension (id: MobileMoneyTxId) def value: String = id
-  given JsonEncoder[MobileMoneyTxId] =
-    JsonEncoder.string.contramap[MobileMoneyTxId](_.value)
+
+  given CanEqual[MobileMoneyTxId, MobileMoneyTxId] = CanEqual.derived
+  given JsonEncoder[MobileMoneyTxId] = JsonEncoder.string
   given JsonDecoder[MobileMoneyTxId] = JsonDecoder.string
 }
 opaque type BankTxnId = String
 object BankTxnId {
   def apply(s: String): BankTxnId = s
+  def unapply(id: BankTxnId): String = id
+
   extension (id: BankTxnId) def value: String = id
-  given JsonEncoder[BankTxnId] =
-    JsonEncoder.string.contramap[BankTxnId](_.value)
+
+  given CanEqual[BankTxnId, BankTxnId] = CanEqual.derived
+  given JsonEncoder[BankTxnId] = JsonEncoder.string
   given JsonDecoder[BankTxnId] = JsonDecoder.string
 }
 // ---------- Money ----------
@@ -104,7 +119,7 @@ final case class Circle(
 object Circle {
   given JsonCodec[Circle] = DeriveJsonCodec.gen[Circle]
 }
-enum ContributionStatus derives JsonCodec {
+enum ContributionStatus derives JsonCodec, CanEqual {
   case Pending, Paid, Failed
 }
 final case class Contribution(
@@ -180,8 +195,8 @@ case class TontineCircle(
 // The specific iteration of payments
 case class PaymentCycle(
     id: UUID,
-    circleId: UUID,
+    circleId: CircleId,
     roundNumber: Int, // e.g., Round 1 of 10
-    winnerId: UUID, // The person receiving the pot this round
+    winnerId: MemberId, // The person receiving the pot this round
     status: "Pending" | "Collecting" | "Disbursed"
 )

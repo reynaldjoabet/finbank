@@ -6,22 +6,50 @@ import revenue.domain.ids.*
 
 sealed trait RepoError extends Throwable
 object RepoError {
-  final case class NotFound(entity: String, id: String) extends Exception(s"$entity not found: $id") with RepoError
-  final case class Conflict(message: String) extends Exception(message) with RepoError
-  final case class Storage(message: String) extends Exception(message) with RepoError
+  final case class NotFound(entity: String, id: String)
+      extends Exception(s"$entity not found: $id")
+      with RepoError
+  final case class Conflict(message: String)
+      extends Exception(message)
+      with RepoError
+  final case class Storage(message: String)
+      extends Exception(message)
+      with RepoError
 }
 
 trait TaxpayerRepo {
-  def create(reg: TaxpayerRegistration, nowMs: Long, id: TaxpayerId, tan: String): IO[RepoError, Taxpayer]
+  def create(
+      reg: TaxpayerRegistration,
+      nowMs: Long,
+      id: TaxpayerId,
+      tan: String
+  ): IO[RepoError, Taxpayer]
   def get(id: TaxpayerId): IO[RepoError, Option[Taxpayer]]
   def list(): IO[RepoError, List[Taxpayer]]
 }
 
 trait ReturnRepo {
-  def createDraft(req: ReturnDraftCreate, nowMs: Long, id: ReturnId): IO[RepoError, TaxReturn]
-  def updateDraft(id: ReturnId, payload: zio.json.ast.Json, nowMs: Long): IO[RepoError, TaxReturn]
-  def setStatus(id: ReturnId, status: ReturnStatus, nowMs: Long, submittedAt: Option[Long]): IO[RepoError, TaxReturn]
-  def amend(id: ReturnId, nowMs: Long, newId: ReturnId): IO[RepoError, TaxReturn]
+  def createDraft(
+      req: ReturnDraftCreate,
+      nowMs: Long,
+      id: ReturnId
+  ): IO[RepoError, TaxReturn]
+  def updateDraft(
+      id: ReturnId,
+      payload: zio.json.ast.Json,
+      nowMs: Long
+  ): IO[RepoError, TaxReturn]
+  def setStatus(
+      id: ReturnId,
+      status: ReturnStatus,
+      nowMs: Long,
+      submittedAt: Option[Long]
+  ): IO[RepoError, TaxReturn]
+  def amend(
+      id: ReturnId,
+      nowMs: Long,
+      newId: ReturnId
+  ): IO[RepoError, TaxReturn]
   def get(id: ReturnId): IO[RepoError, Option[TaxReturn]]
   def listByTaxpayer(taxpayerId: TaxpayerId): IO[RepoError, List[TaxReturn]]
 }
@@ -29,13 +57,20 @@ trait ReturnRepo {
 trait RiskRuleRepo {
   def list(): IO[RepoError, List[RiskRule]]
   def create(rule: RiskRule, nowMs: Long): IO[RepoError, RiskRule]
-  def setEnabled(id: RiskRuleId, enabled: Boolean, nowMs: Long): IO[RepoError, RiskRule]
+  def setEnabled(
+      id: RiskRuleId,
+      enabled: Boolean,
+      nowMs: Long
+  ): IO[RepoError, RiskRule]
 }
 
 trait AssessmentRepo {
   def create(a: Assessment, liabilities: List[Liability]): IO[RepoError, Unit]
   def get(id: AssessmentId): IO[RepoError, Option[Assessment]]
-  def listLiabilities(taxpayerId: TaxpayerId, status: Option[LiabilityStatus]): IO[RepoError, List[Liability]]
+  def listLiabilities(
+      taxpayerId: TaxpayerId,
+      status: Option[LiabilityStatus]
+  ): IO[RepoError, List[Liability]]
   def getLiability(id: LiabilityId): IO[RepoError, Option[Liability]]
   def updateLiability(liability: Liability): IO[RepoError, Unit]
 }
@@ -79,7 +114,10 @@ trait DocumentRepo {
   def put(meta: DocumentMeta, bytes: Chunk[Byte]): IO[RepoError, DocumentMeta]
   def getMeta(id: DocumentId): IO[RepoError, Option[DocumentMeta]]
   def getBytes(id: DocumentId): IO[RepoError, Option[Chunk[Byte]]]
-  def listByEntity(entityType: EntityType, entityId: String): IO[RepoError, List[DocumentMeta]]
+  def listByEntity(
+      entityType: EntityType,
+      entityId: String
+  ): IO[RepoError, List[DocumentMeta]]
 }
 
 trait AuditRepo {

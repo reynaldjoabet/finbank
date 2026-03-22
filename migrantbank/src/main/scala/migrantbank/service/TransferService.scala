@@ -2,7 +2,7 @@ package com.migrantbank.service
 
 import com.migrantbank.config.AppConfig
 import com.migrantbank.db.Db
-import com.migrantbank.domain.*
+import com.migrantbank.domain.{*, given}
 import com.migrantbank.repo.*
 import zio.*
 import java.util.UUID

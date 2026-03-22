@@ -2,7 +2,7 @@ package com.migrantbank.integrations
 import com.migrantbank.domain.*
 import zio.*
 
-enum ProviderHealth {
+enum ProviderHealth derives CanEqual {
   case Healthy
   case Unhealthy(reason: String)
 }

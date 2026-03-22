@@ -4,7 +4,7 @@ import domain.*
 import zio.*
 
 // Representing regional payment providers
-enum MobileOperator {
+enum MobileOperator derives CanEqual {
   case MTN, Orange, Camtel
 }
 

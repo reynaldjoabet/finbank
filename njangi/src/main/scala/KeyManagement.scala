@@ -8,6 +8,8 @@ import java.security.interfaces.{
 }
 import java.security.{KeyPair, KeyPairGenerator}
 import java.time.{Duration, Instant}
+
+given CanEqual[Duration, Duration] = CanEqual.derived
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}

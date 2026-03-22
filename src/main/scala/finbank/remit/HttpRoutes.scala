@@ -8,6 +8,9 @@ import io.circe.generic.auto._
 import org.http4s.implicits._
 
 object HttpRoutes {
+  given CanEqual[org.http4s.Method, org.http4s.Method] = CanEqual.derived
+  given CanEqual[org.http4s.Uri.Path, org.http4s.Uri.Path] = CanEqual.derived
+
   given EntityDecoder[IO, QuoteService.QuoteRequest] = jsonOf
   given EntityDecoder[IO, QuoteService.SendRequest] = jsonOf
   given EntityEncoder[IO, QuoteService.RouteOption] = jsonEncoderOf

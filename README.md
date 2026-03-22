@@ -605,3 +605,19 @@ lazy val root = (project in file("."))
         ├── Server.scala       // The ZIO HTTP App startup
         └── Routes.scala       // Webhooks for MoMo callbacks
  ```       
+
+ ## Multiversal Equality
+- Use `derives CanEqual` on all case classes and enums to enable safe equality checks
+- This prevents accidental use of `==` on incompatible types, which can lead to bugs
+- Example:
+```scala
+case class UserId(value: String) derives CanEqual
+case class ProductId(value: String) derives CanEqual  
+// Now you can't accidentally compare a UserId to a ProductId
+```
+`CanEqual` is not `symmetric` — `CanEqual[A, B]` only allows `a == b`, not `b == a`. So    
+```scala
+given CanEqual[A, B] = CanEqual.derived  // allows: a == b
+given CanEqual[B, A] = CanEqual.derived  // allows: b == a
+```
+

@@ -1,6 +1,13 @@
 package coinstar.wallet.persistence
 
-import coinstar.wallet.domain.{Asset, DomainError, UserId, Wallet, WalletId}
+import coinstar.wallet.domain.{
+  Asset,
+  DomainError,
+  UserId,
+  Wallet,
+  WalletId,
+  given
+}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*

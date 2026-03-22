@@ -15,7 +15,7 @@ ThisBuild / scalacOptions ++= Seq(
   //   "-Wunused:implicits",
   //   "-Wunused:params",
   //   "-Wvalue-discard",
-  // "-language:strictEquality",
+  "-language:strictEquality",
   "-Xmax-inlines:100000"
 )
 

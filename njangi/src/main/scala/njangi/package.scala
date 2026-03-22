@@ -7,15 +7,21 @@ package object njangi {
   opaque type UserId = UUID
   object UserId {
     def apply(uuid: UUID): UserId = uuid
+    def unapply(id: UserId): UUID = id
     def random: UserId = UUID.randomUUID()
+
+    given CanEqual[UserId, UserId] = CanEqual.derived
   }
   opaque type CircleId = UUID
   object CircleId {
     def apply(uuid: UUID): CircleId = uuid
+    def unapply(id: CircleId): UUID = id
+
+    given CanEqual[CircleId, CircleId] = CanEqual.derived
   }
 
   // Enums with parameters for Region-Specific logic
-  enum Currency(val symbol: String) {
+  enum Currency(val symbol: String) derives CanEqual {
     case XAF extends Currency("FCFA")
     case NGN extends Currency("₦")
     case USDC extends Currency("$")
@@ -30,13 +36,14 @@ package object njangi {
 
   sealed trait SettlementCapability
 
-  enum SettlementRail(val latencyMillis: Long) extends SettlementCapability {
+  enum SettlementRail(val latencyMillis: Long) extends SettlementCapability
+      derives CanEqual {
     case Gimac extends SettlementRail(2000)
     case Papss extends SettlementRail(5000)
     case StellarUsdc extends SettlementRail(500)
     case Internal extends SettlementRail(50)
   }
-  enum PaymentMethod {
+  enum PaymentMethod derives CanEqual {
     case MobileMoney(provider: String) // e.g., "Orange", "MTN"
     case BankTransfer(bankCode: String)
     case CryptoWallet(chain: String)
@@ -81,7 +88,7 @@ package object njangi {
   // case object Defaulted extends ParticipationStatus
   // case object Completed extends ParticipationStatus
 
-  enum ParticipationStatus {
+  enum ParticipationStatus derives CanEqual {
     case Active, Defaulted, Completed
   }
 
@@ -114,11 +121,11 @@ package object njangi {
       totalPot: BigDecimal
   )
 
-  enum PaymentStatus {
+  enum PaymentStatus derives CanEqual {
     case Success, Failure
   }
 
-  enum CircleState {
+  enum CircleState derives CanEqual {
     case Active, Completed, Defaulted
   }
 

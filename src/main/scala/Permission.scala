@@ -9,14 +9,14 @@ import cats.parse.strings.Json
 
 given JsonValueCodec[List[Permission]] = JsonCodecMaker.make
 
-enum ResourceType derives ConfiguredJsonValueCodec {
+enum ResourceType derives ConfiguredJsonValueCodec, CanEqual {
   case USER
   case ROLE
   case OTHER
   case UNIVERSE
 }
 
-enum Action derives ConfiguredJsonValueCodec {
+enum Action derives ConfiguredJsonValueCodec, CanEqual {
   case CREATE
   case READ
   case UPDATE_ROLE_BINDINGS
