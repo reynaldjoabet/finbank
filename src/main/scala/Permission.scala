@@ -1,11 +1,8 @@
-import com.github.plokhotnyuk.jsoniter_scala.circe.JsoniterScalaCodec._
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros.{
   ConfiguredJsonValueCodec,
   JsonCodecMaker
 }
-import io.circe.generic.auto._
-import cats.parse.strings.Json
 
 given JsonValueCodec[List[Permission]] = JsonCodecMaker.make
 

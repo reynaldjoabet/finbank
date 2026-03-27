@@ -6,11 +6,11 @@ object Dependencies {
     // --- ZIO ecosystem ---
     val zio = "2.1.24"
     val zioJson = "0.9.0"
-    val zioHttp = "3.8.1"
+    val zioHttp = "3.10.1"
     val zioLogging = "2.5.3"
-    val zioConfig = "4.0.6"
+    val zioConfig = "4.0.7"
     val zioSchema = "1.8.0"
-    val zioKafka = "3.2.0"
+    val zioKafka = "3.3.0"
 
     // --- HTTP / API ---
     val http4s = "0.23.33"
@@ -19,13 +19,14 @@ object Dependencies {
 
     // --- JSON / Serialization ---
     val jsoniter = "2.38.9"
-    val circe = "0.14.14"
+    val circe = "0.14.15"
 
     // --- Typelevel / FP ---
     val catsEffect = "3.7.0"
     val fs2 = "3.13.0"
     val fs2Kafka = "3.9.1"
-    val chimney = "1.8.2"
+    val chimney = "1.9.0"
+    val iron = "3.3.0"
 
     // --- Database / Persistence ---
     val doobie = "1.0.0-RC5"
@@ -41,8 +42,8 @@ object Dependencies {
     val bouncycastle = "1.83"
     val password4j = "1.8.4"
     val auth0 = "4.5.1"
-    val nimbusJwt = "10.7"
-    val nimbusOidc = "11.33"
+    val nimbusJwt = "10.8"
+    val nimbusOidc = "11.35"
 
     // --- Logging ---
     val scribe = "3.18.0"
@@ -164,6 +165,14 @@ object Dependencies {
   // Data Transformation
   // ---------------------------------------------------------------------------
   lazy val chimney = "io.scalaland" %% "chimney" % Version.chimney
+  lazy val iron = "io.github.iltotore" %% "iron" % Version.iron
+  lazy val ironZioJson = "io.github.iltotore" %% "iron-zio-json" % Version.iron
+  lazy val ironJsoniter = "io.github.iltotore" %% "iron-jsoniter" % Version.iron
+  lazy val ironChimney = "io.github.iltotore" %% "iron-chimney" % Version.iron
+  lazy val ironDoobie = "io.github.iltotore" %% "iron-doobie" % Version.iron
+  lazy val ironSkunk = "io.github.iltotore" %% "iron-skunk" % Version.iron
+  lazy val ironPureconfig =
+    "io.github.iltotore" %% "iron-pureconfig" % Version.iron
 
   // ---------------------------------------------------------------------------
   // Typelevel / FP
@@ -222,6 +231,8 @@ object Dependencies {
   // ---------------------------------------------------------------------------
   lazy val pureconfig =
     "com.github.pureconfig" %% "pureconfig-core" % Version.pureconfig
+  lazy val pureconfigGeneric =
+    "com.github.pureconfig" %% "pureconfig-generic-scala3" % Version.pureconfig
 
   // ---------------------------------------------------------------------------
   // Testing

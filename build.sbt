@@ -22,30 +22,21 @@ ThisBuild / scalacOptions ++= Seq(
 lazy val root = (project in file("."))
   .settings(
     name := "finbank",
-    libraryDependencies ++= Seq(
-      sttpCore,
-      sttpJsoniter,
-      http4sBackend,
-      `http4s-dsl`,
-      emberServer,
-      fs2,
-      chimney,
-      emberClient,
-      catsEffect,
-      pureconfig,
-      slf4j,
-      logback,
-      scribe,
-      scribeSlf4j,
-      scribeCats,
-      jsoniter,
-      jsoniterMacros,
-      jsoniterCirce,
-      munit,
-      http4sCirce,
+    libraryDependencies ++= commonDependencies ++ Seq(
       circeCore,
       circeGeneric,
-      circeParser
+      circeParser,
+      `http4s-dsl`,
+      emberServer,
+      emberClient,
+      http4sCirce,
+      catsEffect,
+      fs2,
+      chimney,
+      http4sBackend,
+      pureconfig,
+      pureconfigGeneric,
+      munit
     )
   )
   .aggregate(unityPay, njangi, billing, coinstar, migrantbank, wallet, revenue)
@@ -79,7 +70,22 @@ val commonDependencies = Seq(
   postgres,
   zioConfigTypesafe,
   nimbusdsJoseJwt,
-  nimbusdsOauth2OidcSdk
+  nimbusdsOauth2OidcSdk,
+  iron,
+  ironChimney,
+  ironDoobie,
+  ironJsoniter,
+  ironPureconfig,
+  ironSkunk,
+  ironZioJson,
+  pureconfig
+)
+
+val dbDependencies = Seq(
+  quill,
+  hikaricp,
+  flyway,
+  jwtZioJson
 )
 
 lazy val unityPay = (project in file("unity-pay"))
@@ -109,47 +115,28 @@ val billing = (project in file("billing"))
 val coinstar = (project in file("coinstar"))
   .settings(
     name := "coinstar",
-    libraryDependencies ++= commonDependencies ++ Seq(
-      quill,
-      hikaricp,
-      flyway,
-      jwtZioJson
-    ),
+    libraryDependencies ++= commonDependencies ++ dbDependencies,
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 
 val migrantbank = (project in file("migrantbank"))
   .settings(
     name := "migrantbank",
-    libraryDependencies ++= commonDependencies ++ Seq(
-      hikaricp,
-      flyway,
-      jwtZioJson,
-      auth0,
-      quill
+    libraryDependencies ++= commonDependencies ++ dbDependencies ++ Seq(
+      auth0
     )
   )
 
 val wallet = (project in file("wallet"))
   .settings(
     name := "wallet",
-    libraryDependencies ++= commonDependencies ++ Seq(
-      quill,
-      hikaricp,
-      flyway,
-      jwtZioJson
-    ),
+    libraryDependencies ++= commonDependencies ++ dbDependencies,
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
 
 lazy val revenue = (project in file("revenue"))
   .settings(
     name := "revenue",
-    libraryDependencies ++= commonDependencies ++ Seq(
-      quill,
-      hikaricp,
-      flyway,
-      jwtZioJson
-    ),
+    libraryDependencies ++= commonDependencies ++ dbDependencies,
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )

@@ -5,9 +5,7 @@ import com.github.plokhotnyuk.jsoniter_scala.macros._
 import com.github.plokhotnyuk.jsoniter_scala.circe.JsoniterScalaCodec.*
 import java.nio.charset.StandardCharsets
 import scala.math.BigDecimal.RoundingMode
-import io.circe.Json
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.semiauto._
+import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.syntax._
 
 object JsoniterSyntaticSugar {
@@ -58,8 +56,6 @@ object JsoniterSyntaticSugar {
 
 object QuoteService2 {
 
-  implicit def listCodec[A: JsonValueCodec]: JsonValueCodec[List[A]] =
-    JsonCodecMaker.make[List[A]]
   implicit val quoteRequestCodec: JsonValueCodec[QuoteRequest] =
     JsonCodecMaker.make[QuoteRequest]
   implicit val routeOptionCodec: JsonValueCodec[RouteOption] =
@@ -71,30 +67,21 @@ object QuoteService2 {
   implicit val sendResultCodec: JsonValueCodec[SendResult] =
     JsonCodecMaker.make[SendResult]
 
-  implicit val quoteRequestDecoder: Decoder[QuoteRequest] = deriveDecoder
-  implicit val quoteRequestEncoder: Encoder[QuoteRequest] = deriveEncoder
-
-  implicit val routeOptionDecoder: Decoder[RouteOption] = deriveDecoder
-  implicit val routeOptionEncoder: Encoder[RouteOption] = deriveEncoder
-  implicit val sendRequestDecoder: Decoder[SendRequest] = deriveDecoder
-  implicit val sendRequestEncoder: Encoder[SendRequest] = deriveEncoder
-  implicit val sendResultDecoder: Decoder[SendResult] = deriveDecoder
-  implicit val sendResultEncoder: Encoder[SendResult] = deriveEncoder
-
-  case class QuoteRequest(amountMUR: BigDecimal)
+  case class QuoteRequest(amountMUR: BigDecimal) derives Codec.AsObject
   case class RouteOption(
       name: String,
       steps: List[String],
       feePercentages: List[BigDecimal],
       deliveredAmountXAF: BigDecimal,
       totalLossPercent: BigDecimal
-  )
+  ) derives Codec.AsObject
   case class SendRequest(amountMUR: BigDecimal, chosenRoute: String)
+      derives Codec.AsObject
   case class SendResult(
       success: Boolean,
       deliveredXAF: BigDecimal,
       message: String
-  )
+  ) derives Codec.AsObject
 
   // Demo FX rates (replace with live rates in production)
   private val murToUsdRate = BigDecimal("0.023")
