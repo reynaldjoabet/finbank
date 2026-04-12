@@ -1,13 +1,15 @@
-package com.migrantbank.security
+package migrantbank.security
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.domain.{AppError, AuthContext}
+import migrantbank.config.AppConfig
 import com.nimbusds.jose.*
 import com.nimbusds.jose.crypto.*
 import com.nimbusds.jwt.*
+import migrantbank.domain.AppError
+import migrantbank.domain.AuthContext
 import zio.*
 
-import java.util.{Date, UUID}
+import java.util.Date
+import java.util.UUID
 
 trait JwtService2 {
   def issueAccess(userId: UUID, role: String): UIO[String]

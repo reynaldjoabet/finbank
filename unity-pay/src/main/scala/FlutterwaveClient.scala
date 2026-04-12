@@ -1,3 +1,4 @@
+package unitypay
 import sttp.client4._
 
 object FlutterwaveClient {

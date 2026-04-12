@@ -1,13 +1,14 @@
-package com.migrantbank.security
+package migrantbank.security
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.domain.AppError
+import migrantbank.config.AppConfig
+import migrantbank.domain.AppError
 import zio.*
 
 import java.security.SecureRandom
 import java.util.Base64
 import javax.crypto.Cipher
-import javax.crypto.spec.{GCMParameterSpec, SecretKeySpec}
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 
 trait Crypto {
   def encryptUtf8(plain: String): IO[AppError, String]

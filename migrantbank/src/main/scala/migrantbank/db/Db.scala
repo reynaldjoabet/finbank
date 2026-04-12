@@ -1,11 +1,13 @@
-package com.migrantbank.db
+package migrantbank.db
 
 import com.augustnagro.magnum.*
-import com.migrantbank.config.AppConfig
-import com.migrantbank.domain.AppError
-import com.zaxxer.hikari.{HikariConfig, HikariDataSource}
+import migrantbank.config.AppConfig
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import migrantbank.domain.AppError
 import org.flywaydb.core.Flyway
 import zio.*
+
 import javax.sql.DataSource
 
 trait Db {

@@ -1,8 +1,8 @@
-package com.migrantbank.service
+package migrantbank.service
 
-import com.migrantbank.db.Db
-import com.migrantbank.domain.{*, given}
-import com.migrantbank.repo.CardRepo
+import migrantbank.db.Db
+import migrantbank.domain.{*, given}
+import migrantbank.repo.CardRepo
 import zio.*
 import java.util.UUID
 

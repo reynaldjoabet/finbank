@@ -1,8 +1,8 @@
-package com.migrantbank.service
+package migrantbank.service
 
-import com.migrantbank.db.Db
-import com.migrantbank.domain.*
-import com.migrantbank.repo.*
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.repo.*
 import zio.*
 import java.time.{LocalDate, ZoneId}
 import java.util.UUID

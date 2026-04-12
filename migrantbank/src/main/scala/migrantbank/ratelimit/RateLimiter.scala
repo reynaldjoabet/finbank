@@ -1,7 +1,8 @@
-package com.migrantbank.ratelimit
+package migrantbank.ratelimit
 
-import com.migrantbank.domain.AppError
+import migrantbank.domain.AppError
 import zio.*
+
 import java.util.concurrent.TimeUnit
 trait RateLimiter {
   def check(key: String, limitPerMinute: Int): IO[AppError.RateLimited, Unit]

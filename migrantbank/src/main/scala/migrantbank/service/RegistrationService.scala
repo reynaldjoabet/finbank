@@ -1,11 +1,11 @@
-package com.migrantbank.service
+package migrantbank.service
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.db.Db
-import com.migrantbank.domain.*
-import com.migrantbank.integrations.*
-import com.migrantbank.repo.*
-import com.migrantbank.security.*
+import migrantbank.config.AppConfig
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.integrations.*
+import migrantbank.repo.*
+import migrantbank.security.*
 import zio.*
 import zio.json.*
 import java.time.Instant

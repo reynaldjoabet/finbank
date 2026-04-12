@@ -1,11 +1,11 @@
-package com.migrantbank.api
+package migrantbank.api
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.domain.*
-import com.migrantbank.metrics.Metrics
-import com.migrantbank.ratelimit.RateLimiter
-import com.migrantbank.security.JwtService
-import com.migrantbank.service.*
+import migrantbank.config.AppConfig
+import migrantbank.domain.*
+import migrantbank.metrics.Metrics
+import migrantbank.ratelimit.RateLimiter
+import migrantbank.security.JwtService
+import migrantbank.service.*
 import zio.*
 import zio.http.*
 import zio.http.codec.PathCodec.uuid

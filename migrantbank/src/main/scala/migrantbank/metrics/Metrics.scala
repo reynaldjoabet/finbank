@@ -1,4 +1,4 @@
-package com.migrantbank.metrics
+package migrantbank.metrics
 
 import zio.*
 

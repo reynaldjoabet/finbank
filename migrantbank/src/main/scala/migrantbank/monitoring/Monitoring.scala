@@ -1,7 +1,7 @@
-package com.migrantbank.monitoring
+package migrantbank.monitoring
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.integrations.*
+import migrantbank.config.AppConfig
+import migrantbank.integrations.*
 import zio.*
 
 trait Monitoring {

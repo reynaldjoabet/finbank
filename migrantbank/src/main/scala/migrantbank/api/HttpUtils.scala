@@ -1,6 +1,6 @@
-package com.migrantbank.api
+package migrantbank.api
 
-import com.migrantbank.domain.*
+import migrantbank.domain.*
 import zio.*
 import zio.http.*
 import zio.json.*

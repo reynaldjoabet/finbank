@@ -1,3 +1,4 @@
+package unitypay
 import zio._
 import sttp.client4._
 //import sttp.client4.asynchttpclient.zio.AsyncHttpClientZioBackend

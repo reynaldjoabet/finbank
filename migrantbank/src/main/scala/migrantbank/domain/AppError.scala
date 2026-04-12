@@ -1,4 +1,4 @@
-package com.migrantbank.domain
+package migrantbank.domain
 
 sealed trait AppError extends Throwable {
   def message: String

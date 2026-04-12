@@ -1,4 +1,4 @@
-package com.migrantbank.config
+package migrantbank.config
 
 final case class AppConfig(
     http: AppConfig.Http,

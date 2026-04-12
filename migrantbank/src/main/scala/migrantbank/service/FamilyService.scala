@@ -1,9 +1,10 @@
-package com.migrantbank.service
+package migrantbank.service
 
-import com.migrantbank.db.Db
-import com.migrantbank.domain.{*, given}
-import com.migrantbank.repo.*
+import migrantbank.db.Db
+import migrantbank.repo.*
+import migrantbank.domain.{*, given}
 import zio.*
+
 import java.util.UUID
 
 trait FamilyService {

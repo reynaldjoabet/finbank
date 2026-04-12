@@ -1,10 +1,10 @@
-package com.migrantbank.api
+package migrantbank.api
 
-import com.migrantbank.domain.*
-import com.migrantbank.security.JwtService
+import HttpUtils.*
+import migrantbank.security.JwtService
+import migrantbank.domain.*
 import zio.*
 import zio.http.*
-import HttpUtils.*
 
 object AuthHelpers {
 

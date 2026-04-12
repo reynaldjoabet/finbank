@@ -1,4 +1,4 @@
-package com.migrantbank.security
+package migrantbank.security
 
 import java.security.MessageDigest
 

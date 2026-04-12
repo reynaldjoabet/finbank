@@ -1,14 +1,14 @@
-package com.migrantbank
+package migrantbank
 
-import com.migrantbank.api.AppRoutes
-import com.migrantbank.config.{AppConfig, ConfigLoader}
-import com.migrantbank.db.Db
-import com.migrantbank.integrations.DummyProviders
-import com.migrantbank.metrics.Metrics
-import com.migrantbank.monitoring.Monitoring
-import com.migrantbank.ratelimit.RateLimiter
-import com.migrantbank.security.{Crypto, JwtService, PasswordHasher}
-import com.migrantbank.service.*
+import migrantbank.api.AppRoutes
+import migrantbank.config.{AppConfig, ConfigLoader}
+import migrantbank.db.Db
+import migrantbank.integrations.DummyProviders
+import migrantbank.metrics.Metrics
+import migrantbank.monitoring.Monitoring
+import migrantbank.ratelimit.RateLimiter
+import migrantbank.security.{Crypto, JwtService, PasswordHasher}
+import migrantbank.service.*
 import zio.*
 import zio.http.*
 

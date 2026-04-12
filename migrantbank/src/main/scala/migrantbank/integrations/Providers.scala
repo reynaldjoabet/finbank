@@ -1,5 +1,5 @@
-package com.migrantbank.integrations
-import com.migrantbank.domain.*
+package migrantbank.integrations
+import migrantbank.domain.*
 import zio.*
 
 enum ProviderHealth derives CanEqual {

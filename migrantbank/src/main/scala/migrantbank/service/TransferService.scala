@@ -1,9 +1,9 @@
-package com.migrantbank.service
+package migrantbank.service
 
-import com.migrantbank.config.AppConfig
-import com.migrantbank.db.Db
-import com.migrantbank.domain.{*, given}
-import com.migrantbank.repo.*
+import migrantbank.config.AppConfig
+import migrantbank.db.Db
+import migrantbank.domain.{*, given}
+import migrantbank.repo.*
 import zio.*
 import java.util.UUID
 

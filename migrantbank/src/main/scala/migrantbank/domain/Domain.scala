@@ -1,9 +1,10 @@
-package com.migrantbank.domain
+package migrantbank.domain
 
+import com.augustnagro.magnum.DbCodec
 import zio.json.*
+
 import java.time.Instant
 import java.util.UUID
-import com.augustnagro.magnum.DbCodec
 
 given CanEqual[UUID, UUID] = CanEqual.derived
 

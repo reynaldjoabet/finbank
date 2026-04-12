@@ -1,3 +1,4 @@
+package unitypay
 import sttp.client4.*
 object MonoClient {
   private val SecretKey = sys.env("MONO_SECRET_KEY")

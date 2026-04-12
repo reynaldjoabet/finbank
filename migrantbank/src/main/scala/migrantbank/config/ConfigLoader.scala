@@ -1,4 +1,4 @@
-package com.migrantbank.config
+package migrantbank.config
 
 import zio.*
 import zio.config.*

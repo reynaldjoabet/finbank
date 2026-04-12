@@ -1,10 +1,11 @@
-package com.migrantbank.repo
+package migrantbank.repo
 
 import com.augustnagro.magnum.*
-import java.util.UUID
+import migrantbank.security.TokenHash
+import migrantbank.domain.*
+
 import java.time.Instant
-import com.migrantbank.domain.*
-import com.migrantbank.security.TokenHash
+import java.util.UUID
 
 @Table(PostgresDbType)
 case class UserRow(

@@ -1,9 +1,9 @@
-package com.migrantbank.service
+package migrantbank.service
 
 import com.augustnagro.magnum.*
-import com.migrantbank.db.Db
-import com.migrantbank.domain.*
-import com.migrantbank.repo.*
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.repo.*
 import zio.*
 import zio.json.*
 import java.util.UUID

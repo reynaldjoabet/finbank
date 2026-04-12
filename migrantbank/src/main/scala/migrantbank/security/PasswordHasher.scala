@@ -1,4 +1,4 @@
-package com.migrantbank.security
+package migrantbank.security
 
 import com.password4j.Password
 import com.password4j.Argon2Function
