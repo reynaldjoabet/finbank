@@ -102,70 +102,69 @@ object StablecoinClearingService {
       store: Ref[Map[UUID, ClearingRecord]]
   ) extends StablecoinClearingService {
 
+    override def initiate(
+        senderId: UUID,
+        recipientPhone: String,
+        recipientCountry: String,
+        sendAmount: Money,
+        receiveAmount: Money,
+        lockedRateId: UUID,
+        idempotencyKey: String
+    ): IO[AppError, ClearingRecord] =
+      for {
+        // Check idempotency
+        now      <- Clock.instant
+        existing <- store.get.map(
+          _.values.find(_.request.idempotencyKey == idempotencyKey)
+        )
+        result <- existing match {
+          case Some(r) => ZIO.succeed(r)
+          case None    =>
+            for {
+              _    <- fx.validate(lockedRateId)
+              id   <- Random.nextUUID
+              rail = selectRail(sendAmount.currency, receiveAmount.currency)
+              req = ClearingRequest(
+                id = id,
+                senderId = senderId,
+                recipientPhone = recipientPhone,
+                recipientCountry = recipientCountry,
+                sendAmountMinor = sendAmount.amountMinor,
+                sendCurrency = sendAmount.currency,
+                receiveAmountMinor = receiveAmount.amountMinor,
+                receiveCurrency = receiveAmount.currency,
+                lockedRateId = lockedRateId,
+                rail = rail,
+                idempotencyKey = idempotencyKey,
+                createdAt = now
+              )
+              // --- stub: replace with real on-ramp API call ---
+              onChainHash <- Random.nextUUID.map(u => s"0x${u.toString.replace("-", "")}")
+              _ <- ZIO.logInfo(
+                s"[StablecoinClearing] On-chain tx=$onChainHash rail=$rail " +
+                  s"${sendAmount.amountMinor} ${sendAmount.currency} → " +
+                  s"${receiveAmount.amountMinor} ${receiveAmount.currency}"
+              )
+              record = ClearingRecord(
+                request = req,
+                status = ClearingStatus.Settled,
+                onChainTxHash = Some(onChainHash),
+                settledAt = Some(now),
+                errorReason = None
+              )
+              _ <- store.update(_ + (id -> record))
+            } yield record
+        }
+      } yield result
 
-        override def initiate(
-            senderId: UUID,
-            recipientPhone: String,
-            recipientCountry: String,
-            sendAmount: Money,
-            receiveAmount: Money,
-            lockedRateId: UUID,
-            idempotencyKey: String
-        ): IO[AppError, ClearingRecord] =
-          for {
-            // Check idempotency
-            now      <- Clock.instant
-            existing <- store.get.map(
-              _.values.find(_.request.idempotencyKey == idempotencyKey)
-            )
-            result <- existing match {
-              case Some(r) => ZIO.succeed(r)
-              case None    =>
-                for {
-                  _    <- fx.validate(lockedRateId)
-                  id   <- Random.nextUUID
-                  rail = selectRail(sendAmount.currency, receiveAmount.currency)
-                  req = ClearingRequest(
-                    id = id,
-                    senderId = senderId,
-                    recipientPhone = recipientPhone,
-                    recipientCountry = recipientCountry,
-                    sendAmountMinor = sendAmount.amountMinor,
-                    sendCurrency = sendAmount.currency,
-                    receiveAmountMinor = receiveAmount.amountMinor,
-                    receiveCurrency = receiveAmount.currency,
-                    lockedRateId = lockedRateId,
-                    rail = rail,
-                    idempotencyKey = idempotencyKey,
-                    createdAt = now
-                  )
-                  // --- stub: replace with real on-ramp API call ---
-                  onChainHash <- Random.nextUUID.map(u => s"0x${u.toString.replace("-", "")}")
-                  _ <- ZIO.logInfo(
-                    s"[StablecoinClearing] On-chain tx=$onChainHash rail=$rail " +
-                      s"${sendAmount.amountMinor} ${sendAmount.currency} → " +
-                      s"${receiveAmount.amountMinor} ${receiveAmount.currency}"
-                  )
-                  record = ClearingRecord(
-                    request = req,
-                    status = ClearingStatus.Settled,
-                    onChainTxHash = Some(onChainHash),
-                    settledAt = Some(now),
-                    errorReason = None
-                  )
-                  _ <- store.update(_ + (id -> record))
-                } yield record
-            }
-          } yield result
-
-        override def getRecord(id: UUID): IO[AppError, ClearingRecord] =
-          store.get.flatMap { m =>
-            ZIO
-              .fromOption(m.get(id))
-              .orElseFail(AppError.NotFound(s"Clearing record $id not found"))
-          }
-
-        override def listBySender(senderId: UUID): IO[AppError, List[ClearingRecord]] =
-          store.get.map(_.values.filter(_.request.senderId == senderId).toList)
+    override def getRecord(id: UUID): IO[AppError, ClearingRecord] =
+      store.get.flatMap { m =>
+        ZIO
+          .fromOption(m.get(id))
+          .orElseFail(AppError.NotFound(s"Clearing record $id not found"))
       }
+
+    override def listBySender(senderId: UUID): IO[AppError, List[ClearingRecord]] =
+      store.get.map(_.values.filter(_.request.senderId == senderId).toList)
+  }
 }
