@@ -1,6 +1,6 @@
 package com.migrantbank.service
 
-import com.migrantbank.domain.*
+import com.migrantbank.domain.{*, given}
 import zio.*
 import java.time.Instant
 import java.util.UUID
@@ -168,5 +168,4 @@ object StablecoinClearingService {
         override def listBySender(senderId: UUID): IO[AppError, List[ClearingRecord]] =
           store.get.map(_.values.filter(_.request.senderId == senderId).toList)
       }
-    }
 }

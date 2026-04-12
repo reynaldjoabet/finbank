@@ -1,6 +1,6 @@
 package com.migrantbank.service
 
-import com.migrantbank.domain.*
+import com.migrantbank.domain.{*, given}
 import zio.*
 import java.time.Instant
 import java.util.UUID

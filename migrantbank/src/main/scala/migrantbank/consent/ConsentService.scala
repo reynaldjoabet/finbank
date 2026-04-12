@@ -1,6 +1,7 @@
 package com.migrantbank.consent
 
 import com.migrantbank.domain.AppError
+import com.migrantbank.domain.given_CanEqual_UUID_UUID
 import com.migrantbank.security.TokenHash
 import zio.*
 import java.time.Instant

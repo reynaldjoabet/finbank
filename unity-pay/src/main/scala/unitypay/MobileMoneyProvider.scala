@@ -1,5 +1,6 @@
 package unitypay
 
+import unitypay.providers.{MtnMomoAdapter, OrangeMomoAdapter, WaveAdapter}
 import zio.*
 import zio.json.*
 import java.time.Instant
