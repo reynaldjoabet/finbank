@@ -1,11 +1,11 @@
-import sbt._
+import sbt.*
 
 object Dependencies {
 
   private object Version {
     // --- ZIO ecosystem ---
-    val zio = "2.1.24"
-    val zioJson = "0.9.0"
+    val zio = "2.1.25"
+    val zioJson = "0.9.1"
     val zioHttp = "3.10.1"
     val zioLogging = "2.5.3"
     val zioConfig = "4.0.7"
@@ -13,8 +13,8 @@ object Dependencies {
     val zioKafka = "3.3.0"
 
     // --- HTTP / API ---
-    val http4s = "0.23.33"
-    val sttp4 = "4.0.19"
+    val http4s = "0.23.34"
+    val sttp4 = "4.0.21"
     val tapir = "1.13.13"
 
     // --- JSON / Serialization ---
@@ -30,23 +30,23 @@ object Dependencies {
 
     // --- Database / Persistence ---
     val doobie = "1.0.0-RC5"
-    val magnum = "2.0.0-M2"
+    val magnum = "2.0.0-M3"
     val quill = "4.8.6"
     val hikaricp = "7.0.2"
-    val flyway = "12.1.1"
+    val flyway = "12.3.0"
     val skunk = "1.1.0-M3"
     val postgres = "42.7.10"
 
     // --- Auth / Security ---
-    val jwtScala = "11.0.3"
+    val jwtScala = "11.0.4"
     val bouncycastle = "1.83"
     val password4j = "1.8.4"
     val auth0 = "4.5.1"
-    val nimbusJwt = "10.8"
-    val nimbusOidc = "11.35"
+    val nimbusJwt = "10.9"
+    val nimbusOidc = "11.37"
 
     // --- Logging ---
-    val scribe = "3.18.0"
+    val scribe = "3.19.0"
     val slf4j = "2.0.17"
     val logback = "1.5.32"
 

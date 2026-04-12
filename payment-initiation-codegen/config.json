@@ -1,0 +1,33 @@
+{
+    "generatorName": "scala-sttp4-jsoniter",
+    "inputSpec": "payment-initiation-codegen/src/main/resources/payment-initiation.yaml",
+    "outputDir": "payment-initiation-codegen/src/main/scala",
+    "templateDir": "payment-initiation-codegen/custom-templates",
+    "mainPackage": "",
+    "apiPackage": "payment.initiation.api",
+    "modelPackage": "payment.initiation.models",
+    "invokerPackage": "payment.initiation",
+    "globalProperties": {
+        "apis": "",
+        "models": "",
+        "supportingFiles": ""
+    },
+    "modelPropertyNaming": "camelCase",
+    "ensureUniqueParams": "true",
+    "sortParamsByRequiredFlag": "true",
+    "sortModelPropertiesByRequiredFlag": "true",
+    "allowUnicodeIdentifiers": "false",
+    "prependFormOrBodyParameters": "false",
+    "enumUnknownDefaultCase": "true",
+    "disallowAdditionalPropertiesIfNotPresent": "false",
+    "separateErrorChannel": "true",
+    "sttpClientVersion": "4.0.13",
+    "jsoniterVersion": "2.38.6",
+    "additionalProperties": {
+        "artifactVersion": "1.0.0",
+        "sourceFolder": "",
+        "apiNameSuffix": "",
+        "dateLibrary": "java8",
+        "hideGenerationTimestamp": "true"
+    }
+}

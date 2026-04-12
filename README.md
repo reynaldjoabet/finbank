@@ -607,13 +607,27 @@ lazy val root = (project in file("."))
  ```       
 
  ## Multiversal Equality
-- Use `derives CanEqual` on all case classes and enums to enable safe equality checks
+- Use `given CanEqual` in opaque type companions to enable safe equality checks
 - This prevents accidental use of `==` on incompatible types, which can lead to bugs
+- Prefer **opaque types** over case class wrappers — zero runtime cost, same type safety
 - Example:
 ```scala
-case class UserId(value: String) derives CanEqual
-case class ProductId(value: String) derives CanEqual  
+opaque type UserId = String
+object UserId {
+  def apply(value: String): UserId = value
+  given CanEqual[UserId, UserId] = CanEqual.derived
+}
+
+opaque type ProductId = String
+object ProductId {
+  def apply(value: String): ProductId = value
+  given CanEqual[ProductId, ProductId] = CanEqual.derived
+}
+
 // Now you can't accidentally compare a UserId to a ProductId
+val u = UserId("u1")
+val p = ProductId("p1")
+// u == p  // compile error
 ```
 `CanEqual` is not `symmetric` — `CanEqual[A, B]` only allows `a == b`, not `b == a`. So    
 ```scala
@@ -621,3 +635,29 @@ given CanEqual[A, B] = CanEqual.derived  // allows: a == b
 given CanEqual[B, A] = CanEqual.derived  // allows: b == a
 ```
 
+- fintech
+- banking
+
+### Banking and Payments
+- `A2A (Account-to-Account)`: Payments that involve the transfer of funds between two accounts owned by a single party. These accounts may be at the same or different financial institutions.
+- `accounts payable (AP)`: Amounts due to vendors or suppliers for goods or services received that have not yet been paid for.
+- `accounts receivable (AR)`: Amounts owed for goods or services delivered that have not yet been paid for.
+- `KYC (Know Your Customer)`: A standard banking risk assessment practice to prevent identity theft, money laundering, fraud, and terrorism by verifying customer identities and understanding their transaction habits. KYC is a mandatory requirement of legal compliance in the financial sector.
+- `mobile wallet`: A type of digital wallet, this is a software application usually used in conjunction with a mobile payment system to facilitate electronic payments using a smartphone for online transactions as well as purchases at physical stores. Mobile wallets need to be linked to a user’s bank or credit card account.
+- `non-sufficient funds (NSF)`: Occurs when a payment is attempted, but there aren’t enough funds in the account to cover it entirely. This commonly results in a fee and a canceled, or “bounced” payment. If the bank doesn’t cancel and covers the payment, it’s known as an overdraft.
+- `overdraft`: Occurs when more money is spent than is available in a checking account. An overdraft fee will be charged, and the payment will be processed
+- overlimit: When a cardholder exceeds the predetermined credit limit on a payment card, that cardholder’s account is deemed over-limit. At that point, the card issuer may decline the transaction or process the transaction and then assess a penalty fee for surpassing the agreed-upon limit.
+- P2P (Peer-to-Peer): Payments that involve the transfer of funds between two different parties’ accounts. These accounts may be at the same or different financial institutions. Examples of P2P include Venmo, Zelle, and Cash App.
+- payment: The transfer of value from one end party to another.
+- payment aggregator: A service provider that facilitates online payments by enabling merchants to accept transactions without the need to set up a merchant account with a bank.
+- payment gateway: An internet-based system used in an e-commerce transaction to transmit payment card information to a credit card processor for verification, completing the authorization process between the merchant and the consumer.
+- `payment message structure (ISO 20022)`: An ISO 20022 payment initiation message is composed of three parts: Group Header, Payment Information, and Credit Transfer Transaction Information.
+- `payment method`: The form of payment a consumer uses to purchase goods or services from a seller (e.g., cash, credit card, debit card, money order, bank transfer).
+- `payment rails`: The technological infrastructure for moving money from one party to another. Some examples of payment rails include ACH, RTP, and cards.
+- `payment service provider (PSP)`: A payment service provider is a third party that provides merchants the ability to accept electronic payments, enabling connectivity to financial institutions and credit card acquirers.
+- `savings account`: An interest-bearing account that offers limited access to funds to encourage savings goals. A minimum balance may be required.
+- `settlement`: The actual movement of funds from one financial institution to another that completes a transaction.
+- `stablecoin`: A cryptocurrency designed to have a stable value by being pegged to a fiat currency or other assets like gold.
+- `checking account`: Allows for easy access to funds and often comes bundled with a debit card and checks. No minimum balance is required. Also called a demand deposit account (DDA).
+
+`BaaS utilizes APIs and webhooks to make integration seamless and cost-effective.`

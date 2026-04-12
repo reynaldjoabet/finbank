@@ -1,0 +1,1389 @@
+openapi: 3.1.0
+info:
+  title: UOFS Account Information API
+  description: |
+    Uganda Open Finance Standard — Account Information API (Phase 1).
+
+    Provides read-only access to account data held at Financial Service Providers (FSPs)
+    on behalf of Payment Service Users (PSUs) who have granted explicit consent to
+    authorised Account Information Service Providers (AISPs).
+
+    This specification covers banks, mobile money operators, SACCOs, and microfinance
+    institutions. Mobile money and SACCO/MFI extensions are included as optional
+    response fields controlled by consent data categories.
+  version: 1.0.0
+  contact:
+    name: UOFS Working Group
+    url: https://uofs.ug
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://{fsp-domain}/uofs/v1/account-information
+    description: FSP production server (domain registered in Participant Directory)
+    variables:
+      fsp-domain:
+        default: api.example.co.ug
+        description: FSP's registered API domain
+  - url: https://sandbox.uofs.ug/v1/account-information
+    description: UOFS sandbox environment
+
+security:
+  - BearerAuth: []
+  - mTLS: []
+
+tags:
+  - name: Accounts
+    description: Account listing and details
+  - name: Balances
+    description: Account balance information
+  - name: Transactions
+    description: Transaction history
+  - name: Beneficiaries
+    description: Saved payment recipients
+  - name: Standing Orders
+    description: Recurring payment instructions (banks)
+  - name: Direct Debits
+    description: Direct debit mandates (banks)
+
+paths:
+  /accounts:
+    get:
+      operationId: getAccounts
+      summary: List consented accounts
+      description: |
+        Returns all accounts the PSU has authorised the AISP to access under the
+        active consent. Requires the PROFILE consent category.
+      tags: [Accounts]
+      parameters:
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/PSUDeviceType'
+        - name: accountType
+          in: query
+          schema:
+            $ref: '#/components/schemas/AccountType'
+          description: Filter by account type
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Accounts retrieved successfully
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+            x-uofs-request-timestamp:
+              $ref: '#/components/headers/RequestTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}:
+    get:
+      operationId: getAccount
+      summary: Get account details
+      description: Returns details of a single account. Requires the PROFILE consent category.
+      tags: [Accounts]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+      responses:
+        '200':
+          description: Account details retrieved successfully
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+            x-uofs-request-timestamp:
+              $ref: '#/components/headers/RequestTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountDetailResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}/balances:
+    get:
+      operationId: getAccountBalances
+      summary: Get account balances
+      description: Returns balance information for a specific account. Requires the BALANCE consent category.
+      tags: [Balances]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+      responses:
+        '200':
+          description: Balances retrieved successfully
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+            x-uofs-request-timestamp:
+              $ref: '#/components/headers/RequestTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /balances:
+    get:
+      operationId: getBulkBalances
+      summary: Get balances for all consented accounts
+      description: Returns balances for all accounts covered by the active consent. Requires the BALANCE consent category.
+      tags: [Balances]
+      parameters:
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Bulk balances retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}/transactions:
+    get:
+      operationId: getAccountTransactions
+      summary: Get account transactions
+      description: |
+        Returns transaction history for a specific account within the date range
+        authorised by the consent. Requires the TRANSACTIONS consent category.
+        Date parameters must fall within the consent's transactionDateRange.
+      tags: [Transactions]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - name: fromBookingDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Start date (ISO 8601). Defaults to consent's transactionDateRange.from.
+        - name: toBookingDate
+          in: query
+          schema:
+            type: string
+            format: date
+          description: End date (ISO 8601). Defaults to current date.
+        - name: transactionType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+          description: Filter by transaction type
+        - name: creditDebitIndicator
+          in: query
+          schema:
+            type: string
+            enum: [CREDIT, DEBIT]
+          description: Filter by credit or debit
+        - name: minAmount
+          in: query
+          schema:
+            type: string
+            pattern: '^\d+\.\d{2}$'
+          description: Minimum transaction amount (inclusive)
+        - name: maxAmount
+          in: query
+          schema:
+            type: string
+            pattern: '^\d+\.\d{2}$'
+          description: Maximum transaction amount (inclusive)
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+            x-uofs-request-timestamp:
+              $ref: '#/components/headers/RequestTimestamp'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /transactions:
+    get:
+      operationId: getBulkTransactions
+      summary: Get transactions for all consented accounts
+      description: Returns transactions across all consented accounts. Same query parameters as the account-specific endpoint.
+      tags: [Transactions]
+      parameters:
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPICustomerIPAddress'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - name: fromBookingDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: toBookingDate
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: transactionType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TransactionType'
+        - name: creditDebitIndicator
+          in: query
+          schema:
+            type: string
+            enum: [CREDIT, DEBIT]
+        - name: minAmount
+          in: query
+          schema:
+            type: string
+            pattern: '^\d+\.\d{2}$'
+        - name: maxAmount
+          in: query
+          schema:
+            type: string
+            pattern: '^\d+\.\d{2}$'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Bulk transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}/beneficiaries:
+    get:
+      operationId: getAccountBeneficiaries
+      summary: Get saved payment recipients
+      description: Returns the list of saved beneficiaries for an account. Requires the BENEFICIARIES consent category.
+      tags: [Beneficiaries]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Beneficiaries retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BeneficiaryListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}/standing-orders:
+    get:
+      operationId: getAccountStandingOrders
+      summary: Get standing orders
+      description: |
+        Returns active standing orders on the account. Requires the STANDING_ORDERS
+        consent category. Primarily applicable to banks; MNOs and SACCOs that do not
+        support standing orders MUST return an empty array.
+      tags: [Standing Orders]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Standing orders retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandingOrderListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /accounts/{accountId}/direct-debits:
+    get:
+      operationId: getAccountDirectDebits
+      summary: Get direct debit mandates
+      description: |
+        Returns active direct debit mandates on the account. Requires the DIRECT_DEBITS
+        consent category. Primarily applicable to banks; FSPs that do not support
+        direct debits MUST return an empty array.
+      tags: [Direct Debits]
+      parameters:
+        - $ref: '#/components/parameters/AccountId'
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIAuthDate'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Direct debits retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectDebitListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth 2.0 access token (sender-constrained via mTLS or DPoP for Full Profile)
+    mTLS:
+      type: mutualTLS
+      description: Mutual TLS client certificate authentication (Full Profile)
+
+  parameters:
+    AccountId:
+      name: accountId
+      in: path
+      required: true
+      schema:
+        type: string
+        maxLength: 128
+      description: Opaque account identifier as returned by the /accounts endpoint. MUST NOT be a raw account number or MSISDN.
+
+    ConsentId:
+      name: x-uofs-consent-id
+      in: header
+      required: true
+      schema:
+        type: string
+        pattern: '^ug-uofs-\d{4}-\d{2}-\d{2}-[a-z0-9]+$'
+      description: Consent artefact ID authorising this request
+
+    FAPIAuthDate:
+      name: x-fapi-auth-date
+      in: header
+      required: false
+      schema:
+        type: string
+        format: date-time
+      description: ISO 8601 timestamp of the PSU's last authentication. REQUIRED for Full Profile.
+
+    FAPICustomerIPAddress:
+      name: x-fapi-customer-ip-address
+      in: header
+      required: false
+      schema:
+        type: string
+      description: PSU's IP address if the request is PSU-initiated. Not applicable for USSD.
+
+    FAPIInteractionId:
+      name: x-fapi-interaction-id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique interaction identifier (UUID). If provided in the request, the FSP MUST echo it. If absent, the FSP MUST generate one.
+
+    PSUDeviceType:
+      name: x-uofs-psu-device-type
+      in: header
+      required: false
+      schema:
+        type: string
+        enum: [SMARTPHONE, FEATURE_PHONE, WEB]
+      description: Originating device type for audit purposes
+
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor from a previous response
+
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+      description: Number of items per page
+
+  headers:
+    FAPIInteractionId:
+      schema:
+        type: string
+        format: uuid
+      description: Echo of the request interaction ID or a newly generated UUID
+
+    APIVersion:
+      schema:
+        type: string
+        example: '1.0'
+      description: API version serving this response
+
+    RequestTimestamp:
+      schema:
+        type: string
+        format: date-time
+      description: ISO 8601 timestamp when the FSP processed the request
+
+  schemas:
+    # --- Enums ---
+    AccountType:
+      type: string
+      enum:
+        - CURRENT_ACCOUNT
+        - SAVINGS_ACCOUNT
+        - MOBILE_WALLET
+        - SACCO_SAVINGS
+        - SACCO_SHARES
+        - MFI_SAVINGS
+        - LOAN_ACCOUNT
+        - VIRTUAL_CARD
+
+    AccountSubType:
+      type: string
+      enum:
+        - INDIVIDUAL
+        - JOINT
+        - CORPORATE
+        - FIXED_DEPOSIT
+        - PERSONAL
+        - AGENT
+        - MERCHANT
+        - ORDINARY
+        - FIXED
+        - JUNIOR
+        - PREFERENCE
+        - GROUP
+        - BUSINESS
+        - MORTGAGE
+        - MICRO
+        - PREPAID
+
+    AccountStatus:
+      type: string
+      enum: [ACTIVE, DORMANT, CLOSED, SUSPENDED]
+
+    IdentificationType:
+      type: string
+      enum: [MSISDN, ACCOUNT_NUMBER, IBAN, NATIONAL_ID, BOU_SORT_CODE, SACCO_MEMBER_ID, MERCHANT_CODE]
+
+    BalanceType:
+      type: string
+      enum: [AVAILABLE, BOOKED, EXPECTED, CREDIT_LIMIT, FORWARD_AVAILABLE, FLOAT]
+
+    CreditDebitIndicator:
+      type: string
+      enum: [CREDIT, DEBIT]
+
+    TransactionStatus:
+      type: string
+      enum: [BOOKED, PENDING]
+
+    TransactionType:
+      type: string
+      enum:
+        # Universal
+        - TRANSFER
+        - PAYMENT
+        - DEPOSIT
+        - WITHDRAWAL
+        - FEE
+        - INTEREST_CREDIT
+        - INTEREST_DEBIT
+        - REVERSAL
+        - STANDING_ORDER
+        - DIRECT_DEBIT
+        # Mobile money
+        - P2P_TRANSFER
+        - MERCHANT_PAYMENT
+        - BILL_PAYMENT
+        - AIRTIME_PURCHASE
+        - CASH_IN
+        - CASH_OUT
+        - BANK_TRANSFER_IN
+        - BANK_TRANSFER_OUT
+        - INTERNATIONAL_REMITTANCE
+        - GOVERNMENT_PAYMENT
+        - LOAN_DISBURSEMENT
+        - LOAN_REPAYMENT
+        - AGENT_FLOAT_TRANSFER
+        - COMMISSION
+        # SACCO/MFI
+        - SHARE_PURCHASE
+        - SHARE_DIVIDEND
+        - SAVINGS_CONTRIBUTION
+        - SAVINGS_WITHDRAWAL
+        - LOAN_PENALTY
+        - WELFARE_CONTRIBUTION
+        - WELFARE_PAYOUT
+
+    StandingOrderFrequency:
+      type: string
+      enum: [WEEKLY, FORTNIGHTLY, MONTHLY, QUARTERLY, SEMI_ANNUALLY, ANNUALLY]
+
+    # --- Core schemas ---
+    Amount:
+      type: object
+      required: [Amount, Currency]
+      properties:
+        Amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          description: Decimal string with 2 decimal places
+          example: '1250000.00'
+        Currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          description: ISO 4217 currency code
+          example: UGX
+
+    AccountIdentifier:
+      type: object
+      required: [IdentificationType, Identification]
+      properties:
+        IdentificationType:
+          $ref: '#/components/schemas/IdentificationType'
+        Identification:
+          type: string
+          maxLength: 256
+          description: The actual identifier value
+        Name:
+          type: string
+          maxLength: 256
+          description: Name associated with this identifier
+
+    FSPReference:
+      type: object
+      required: [FSPId, FSPName, FSPType]
+      properties:
+        FSPId:
+          type: string
+          description: FSP's Participant Directory identifier
+          example: FSP-MTN-UG-001
+        FSPName:
+          type: string
+          description: FSP's registered name
+          example: MTN Mobile Money Uganda
+        FSPType:
+          type: string
+          enum: [BANK, MNO, SACCO, MFI]
+
+    PaginationLinks:
+      type: object
+      required: [Self]
+      properties:
+        Self:
+          type: string
+          format: uri
+        First:
+          type: string
+          format: uri
+        Prev:
+          type: string
+          format: uri
+        Next:
+          type: string
+          format: uri
+        Last:
+          type: string
+          format: uri
+
+    Meta:
+      type: object
+      required: [RequestTimestamp]
+      properties:
+        TotalItems:
+          type: integer
+          description: Total number of items across all pages
+        ItemsPerPage:
+          type: integer
+          description: Number of items in this page
+        RequestTimestamp:
+          type: string
+          format: date-time
+
+    # --- Account ---
+    Account:
+      type: object
+      required:
+        - AccountId
+        - AccountType
+        - AccountSubType
+        - Currency
+        - Status
+        - StatusUpdateDateTime
+        - Description
+        - OpeningDate
+        - Provider
+        - AccountIdentifiers
+      properties:
+        AccountId:
+          type: string
+          maxLength: 128
+          description: Opaque, persistent identifier. MUST NOT be the raw account number.
+        AccountType:
+          $ref: '#/components/schemas/AccountType'
+        AccountSubType:
+          $ref: '#/components/schemas/AccountSubType'
+        Currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          example: UGX
+        Status:
+          $ref: '#/components/schemas/AccountStatus'
+        StatusUpdateDateTime:
+          type: string
+          format: date-time
+        Description:
+          type: string
+          maxLength: 256
+        Nickname:
+          type: string
+          maxLength: 64
+        OpeningDate:
+          type: string
+          format: date-time
+        Provider:
+          $ref: '#/components/schemas/FSPReference'
+        AccountIdentifiers:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/AccountIdentifier'
+        ServicerReference:
+          type: string
+          maxLength: 128
+        # Mobile money extension (WALLET_INFO consent category)
+        WalletInfo:
+          $ref: '#/components/schemas/WalletInfo'
+        # Agent extension (AGENT_SUMMARY consent category)
+        AgentSummary:
+          $ref: '#/components/schemas/AgentSummary'
+        # Merchant extension (MERCHANT_SUMMARY consent category)
+        MerchantSummary:
+          $ref: '#/components/schemas/MerchantSummary'
+        # SACCO extensions
+        SavingsSummary:
+          $ref: '#/components/schemas/SavingsSummary'
+        LoanSummary:
+          $ref: '#/components/schemas/LoanSummary'
+        ShareCapital:
+          $ref: '#/components/schemas/ShareCapital'
+
+    AccountListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Account]
+          properties:
+            Account:
+              type: array
+              items:
+                $ref: '#/components/schemas/Account'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    AccountDetailResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Account]
+          properties:
+            Account:
+              $ref: '#/components/schemas/Account'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Balance ---
+    Balance:
+      type: object
+      required: [AccountId, Amount, CreditDebitIndicator, Type, DateTime]
+      properties:
+        AccountId:
+          type: string
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        CreditDebitIndicator:
+          $ref: '#/components/schemas/CreditDebitIndicator'
+        Type:
+          $ref: '#/components/schemas/BalanceType'
+        DateTime:
+          type: string
+          format: date-time
+          description: Timestamp of the balance snapshot
+
+    BalanceListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Balance]
+          properties:
+            Balance:
+              type: array
+              items:
+                $ref: '#/components/schemas/Balance'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Transaction ---
+    MerchantDetails:
+      type: object
+      properties:
+        MerchantName:
+          type: string
+        MerchantCategoryCode:
+          type: string
+          description: ISO 18245 MCC
+
+    Transaction:
+      type: object
+      required:
+        - TransactionId
+        - AccountId
+        - BookingDateTime
+        - Status
+        - CreditDebitIndicator
+        - Amount
+        - TransactionType
+        - Description
+        - TransactionReference
+      properties:
+        TransactionId:
+          type: string
+          maxLength: 128
+        AccountId:
+          type: string
+        BookingDateTime:
+          type: string
+          format: date-time
+        ValueDateTime:
+          type: string
+          format: date-time
+        Status:
+          $ref: '#/components/schemas/TransactionStatus'
+        CreditDebitIndicator:
+          $ref: '#/components/schemas/CreditDebitIndicator'
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        TransactionType:
+          $ref: '#/components/schemas/TransactionType'
+        Description:
+          type: string
+          maxLength: 500
+        MerchantDetails:
+          $ref: '#/components/schemas/MerchantDetails'
+        CounterpartyAccount:
+          $ref: '#/components/schemas/AccountIdentifier'
+        TransactionReference:
+          type: string
+          maxLength: 128
+        Fee:
+          $ref: '#/components/schemas/Amount'
+        Balance:
+          type: object
+          description: Running balance after this transaction
+          properties:
+            Amount:
+              $ref: '#/components/schemas/Amount'
+            CreditDebitIndicator:
+              $ref: '#/components/schemas/CreditDebitIndicator'
+            Type:
+              $ref: '#/components/schemas/BalanceType'
+        ExchangeRate:
+          type: object
+          description: For cross-currency transactions
+          properties:
+            UnitCurrency:
+              type: string
+            ExchangeRate:
+              type: string
+            RateType:
+              type: string
+              enum: [ACTUAL, INDICATIVE, AGREED]
+            ContractIdentification:
+              type: string
+
+    TransactionListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Transaction]
+          properties:
+            Transaction:
+              type: array
+              items:
+                $ref: '#/components/schemas/Transaction'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Beneficiary ---
+    CreditorAccount:
+      type: object
+      required: [IdentificationType, Identification, Name]
+      properties:
+        IdentificationType:
+          $ref: '#/components/schemas/IdentificationType'
+        Identification:
+          type: string
+        Name:
+          type: string
+        InstitutionName:
+          type: string
+        InstitutionFSPId:
+          type: string
+
+    Beneficiary:
+      type: object
+      required: [BeneficiaryId, AccountId, CreditorAccount]
+      properties:
+        BeneficiaryId:
+          type: string
+        AccountId:
+          type: string
+        Reference:
+          type: string
+        BeneficiaryType:
+          type: string
+          enum: [INDIVIDUAL, BUSINESS, GOVERNMENT]
+        CreditorAccount:
+          $ref: '#/components/schemas/CreditorAccount'
+
+    BeneficiaryListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Beneficiary]
+          properties:
+            Beneficiary:
+              type: array
+              items:
+                $ref: '#/components/schemas/Beneficiary'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Standing Order ---
+    StandingOrder:
+      type: object
+      required:
+        - StandingOrderId
+        - AccountId
+        - Status
+        - Frequency
+        - FirstPaymentDateTime
+        - FirstPaymentAmount
+        - CreditorAccount
+      properties:
+        StandingOrderId:
+          type: string
+        AccountId:
+          type: string
+        Status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        Frequency:
+          $ref: '#/components/schemas/StandingOrderFrequency'
+        Reference:
+          type: string
+        FirstPaymentDateTime:
+          type: string
+          format: date-time
+        NextPaymentDateTime:
+          type: string
+          format: date-time
+        FinalPaymentDateTime:
+          type: string
+          format: date-time
+        FirstPaymentAmount:
+          $ref: '#/components/schemas/Amount'
+        NextPaymentAmount:
+          $ref: '#/components/schemas/Amount'
+        FinalPaymentAmount:
+          $ref: '#/components/schemas/Amount'
+        CreditorAccount:
+          $ref: '#/components/schemas/CreditorAccount'
+
+    StandingOrderListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [StandingOrder]
+          properties:
+            StandingOrder:
+              type: array
+              items:
+                $ref: '#/components/schemas/StandingOrder'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Direct Debit ---
+    DirectDebit:
+      type: object
+      required: [DirectDebitId, AccountId, Status, MandateIdentification, Name]
+      properties:
+        DirectDebitId:
+          type: string
+        AccountId:
+          type: string
+        Status:
+          type: string
+          enum: [ACTIVE, INACTIVE]
+        MandateIdentification:
+          type: string
+          description: Unique mandate reference
+        Name:
+          type: string
+          description: Name of the direct debit originator
+        DirectDebitStatusCode:
+          type: string
+        PreviousPaymentDateTime:
+          type: string
+          format: date-time
+        PreviousPaymentAmount:
+          $ref: '#/components/schemas/Amount'
+
+    DirectDebitListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [DirectDebit]
+          properties:
+            DirectDebit:
+              type: array
+              items:
+                $ref: '#/components/schemas/DirectDebit'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Mobile Money Extensions ---
+    WalletInfo:
+      type: object
+      description: Mobile money wallet details. Included when WALLET_INFO consent category is authorised.
+      properties:
+        WalletType:
+          type: string
+          enum: [PERSONAL, AGENT, MERCHANT, CORPORATE]
+        LinkedMSISDN:
+          type: string
+          pattern: '^\d{12}$'
+          example: '256771234567'
+        AccountTier:
+          type: string
+          enum: [BASIC, ENHANCED, CORPORATE]
+        KYCLevel:
+          type: string
+          enum: [MINIMAL, BASIC, FULL]
+        KYCVerificationDate:
+          type: string
+          format: date-time
+        DailyTransactionLimit:
+          $ref: '#/components/schemas/Amount'
+        MaximumBalance:
+          $ref: '#/components/schemas/Amount'
+        LinkedBankAccount:
+          type: object
+          properties:
+            InstitutionName:
+              type: string
+            Identification:
+              type: string
+            IdentificationType:
+              $ref: '#/components/schemas/IdentificationType'
+        VirtualCard:
+          type: object
+          properties:
+            Available:
+              type: boolean
+            CardType:
+              type: string
+              enum: [PREPAID]
+            Status:
+              type: string
+              enum: [ACTIVE, INACTIVE, BLOCKED]
+            LastFourDigits:
+              type: string
+              pattern: '^\d{4}$'
+
+    AgentSummary:
+      type: object
+      description: Agent account details. Included when AGENT_SUMMARY consent category is authorised.
+      properties:
+        AgentId:
+          type: string
+        AgentTier:
+          type: string
+          enum: [STANDARD, SUPER_AGENT, MASTER_AGENT]
+        FloatBalance:
+          $ref: '#/components/schemas/Amount'
+        DailyTransactionVolume:
+          type: integer
+        DailyTransactionValue:
+          $ref: '#/components/schemas/Amount'
+        MonthlyCommission:
+          $ref: '#/components/schemas/Amount'
+        CommissionPeriod:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          example: '2026-03'
+        ActiveSince:
+          type: string
+          format: date-time
+        Territory:
+          type: string
+
+    MerchantSummary:
+      type: object
+      description: Merchant account details. Included when MERCHANT_SUMMARY consent category is authorised.
+      properties:
+        MerchantId:
+          type: string
+        MerchantName:
+          type: string
+        MerchantCategoryCode:
+          type: string
+          description: ISO 18245 MCC
+        DailyPaymentVolume:
+          type: integer
+        DailyPaymentValue:
+          $ref: '#/components/schemas/Amount'
+        SettlementFrequency:
+          type: string
+          enum: [DAILY, WEEKLY, MONTHLY, ON_DEMAND]
+        LastSettlementDate:
+          type: string
+          format: date-time
+        LastSettlementAmount:
+          $ref: '#/components/schemas/Amount'
+        ActiveSince:
+          type: string
+          format: date-time
+
+    # --- SACCO/MFI Extensions ---
+    SavingsSummary:
+      type: object
+      description: SACCO/MFI savings details. Included when SAVINGS_SUMMARY consent category is authorised.
+      properties:
+        ContributionFrequency:
+          type: string
+          enum: [WEEKLY, FORTNIGHTLY, MONTHLY, QUARTERLY]
+        LastContributionDate:
+          type: string
+          format: date-time
+        LastContributionAmount:
+          $ref: '#/components/schemas/Amount'
+        TotalContributions:
+          $ref: '#/components/schemas/Amount'
+        InterestEarned:
+          $ref: '#/components/schemas/Amount'
+        InterestRate:
+          type: string
+          description: Annual interest rate as a percentage string
+        MaturityDate:
+          type: string
+          format: date-time
+        WithdrawalRestrictions:
+          type: string
+
+    LoanSummary:
+      type: object
+      description: Loan details. Included when LOAN_SUMMARY consent category is authorised.
+      properties:
+        LoanId:
+          type: string
+        LoanType:
+          type: string
+          enum: [PERSONAL, BUSINESS, MORTGAGE, MICRO, AGRICULTURAL, EMERGENCY]
+        DisbursementDate:
+          type: string
+          format: date-time
+        MaturityDate:
+          type: string
+          format: date-time
+        Principal:
+          $ref: '#/components/schemas/Amount'
+        OutstandingBalance:
+          $ref: '#/components/schemas/Amount'
+        InterestRate:
+          type: string
+        InterestType:
+          type: string
+          enum: [FLAT, REDUCING_BALANCE]
+        MonthlyInstalment:
+          $ref: '#/components/schemas/Amount'
+        NextPaymentDate:
+          type: string
+          format: date-time
+        ArrearsStatus:
+          type: string
+          enum: [CURRENT, WATCH, SUBSTANDARD, DOUBTFUL, LOSS]
+        ArrearsAmount:
+          $ref: '#/components/schemas/Amount'
+        DaysPastDue:
+          type: integer
+        Collateral:
+          type: string
+        Guarantors:
+          type: integer
+
+    ShareCapital:
+      type: object
+      description: SACCO share capital details. Included when SHARE_CAPITAL consent category is authorised.
+      properties:
+        TotalShares:
+          type: integer
+        ShareValue:
+          $ref: '#/components/schemas/Amount'
+        TotalShareCapital:
+          $ref: '#/components/schemas/Amount'
+        LastDividendDate:
+          type: string
+          format: date-time
+        LastDividendAmount:
+          $ref: '#/components/schemas/Amount'
+        DividendRate:
+          type: string
+        MinimumShares:
+          type: integer
+        TransferRestrictions:
+          type: string
+
+    # --- Error ---
+    ErrorResponse:
+      type: object
+      required: [Errors, Code, Id, Message]
+      properties:
+        Errors:
+          type: array
+          items:
+            type: object
+            required: [ErrorCode, Message]
+            properties:
+              ErrorCode:
+                type: string
+                description: UOFS error code
+                example: UOFS.Consent.InsufficientScope
+              Message:
+                type: string
+                description: Human-readable error message
+              Path:
+                type: string
+                description: Field or parameter that caused the error
+              Url:
+                type: string
+                format: uri
+                description: Link to error documentation
+        Code:
+          type: string
+          description: HTTP status code as string
+        Id:
+          type: string
+          format: uuid
+          description: Interaction ID for tracing
+        Message:
+          type: string
+          description: Summary error message
+
+    # --- Event Notification ---
+    EventNotification:
+      type: object
+      required: [notificationId, eventType, eventDateTime, consentId, resourceType]
+      properties:
+        notificationId:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - AccountBalanceChanged
+            - AccountTransactionBooked
+            - AccountStatusChanged
+            - ConsentExpired
+            - ConsentRevoked
+        eventDateTime:
+          type: string
+          format: date-time
+        consentId:
+          type: string
+        resourceType:
+          type: string
+          enum: [account, transaction, balance, consent]
+        resourceId:
+          type: string
+        accountId:
+          type: string
+        links:
+          type: object
+          properties:
+            resource:
+              type: string
+              format: uri
+
+  responses:
+    Unauthorized:
+      description: Missing, expired, or invalid access token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Consent does not authorise the requested data category, or consent has expired/been revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found or not accessible under this consent
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
