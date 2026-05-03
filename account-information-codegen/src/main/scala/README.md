@@ -2,7 +2,7 @@
 
 UOFS Account Information API
 - API version: 1.0.0
-    - Generator version: 7.18.0
+    - Generator version: 7.21.0
 
 Uganda Open Finance Standard — Account Information API (Phase 1).
 

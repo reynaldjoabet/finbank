@@ -81,6 +81,7 @@ val commonDependencies = Seq(
   zioConfigTypesafe,
   nimbusdsJoseJwt,
   nimbusdsOauth2OidcSdk,
+  chimney,
   iron,
   ironChimney,
   ironDoobie,

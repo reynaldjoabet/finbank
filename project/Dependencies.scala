@@ -5,8 +5,8 @@ object Dependencies {
   private object Version {
     // --- ZIO ecosystem ---
     val zio = "2.1.25"
-    val zioJson = "0.9.1"
-    val zioHttp = "3.10.1"
+    val zioJson = "0.9.2"
+    val zioHttp = "3.11.1"
     val zioLogging = "2.5.3"
     val zioConfig = "4.0.7"
     val zioSchema = "1.8.0"
@@ -14,7 +14,7 @@ object Dependencies {
 
     // --- HTTP / API ---
     val http4s = "0.23.34"
-    val sttp4 = "4.0.21"
+    val sttp4 = "4.0.23"
     val tapir = "1.13.13"
 
     // --- JSON / Serialization ---
@@ -25,8 +25,8 @@ object Dependencies {
     val catsEffect = "3.7.0"
     val fs2 = "3.13.0"
     val fs2Kafka = "3.9.1"
-    val chimney = "1.9.0"
-    val iron = "3.3.0"
+    val chimney = "1.10.0"
+    val iron = "3.3.1"
 
     // --- Database / Persistence ---
     val doobie = "1.0.0-RC5"
@@ -35,7 +35,7 @@ object Dependencies {
     val hikaricp = "7.0.2"
     val flyway = "12.3.0"
     val skunk = "1.1.0-M3"
-    val postgres = "42.7.10"
+    val postgres = "42.7.11"
 
     // --- Auth / Security ---
     val jwtScala = "11.0.4"
@@ -51,7 +51,7 @@ object Dependencies {
     val logback = "1.5.32"
 
     // --- Caching ---
-    val caffeine = "3.2.3"
+    val caffeine = "3.2.4"
 
     // --- Config ---
     val pureconfig = "0.17.10"
