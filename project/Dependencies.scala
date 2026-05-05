@@ -9,13 +9,13 @@ object Dependencies {
     val zioHttp = "3.11.1"
     val zioLogging = "2.5.3"
     val zioConfig = "4.0.7"
-    val zioSchema = "1.8.0"
+    val zioSchema = "1.8.5"
     val zioKafka = "3.3.0"
 
     // --- HTTP / API ---
     val http4s = "0.23.34"
     val sttp4 = "4.0.23"
-    val tapir = "1.13.13"
+    val tapir = "1.13.18"
 
     // --- JSON / Serialization ---
     val jsoniter = "2.38.9"
@@ -24,24 +24,24 @@ object Dependencies {
     // --- Typelevel / FP ---
     val catsEffect = "3.7.0"
     val fs2 = "3.13.0"
-    val fs2Kafka = "3.9.1"
+    val fs2Kafka = "4.0.0"
     val chimney = "1.10.0"
     val iron = "3.3.1"
 
     // --- Database / Persistence ---
-    val doobie = "1.0.0-RC5"
+    val doobie = "1.0.0-RC12"
     val magnum = "2.0.0-M3"
     val quill = "4.8.6"
     val hikaricp = "7.0.2"
-    val flyway = "12.3.0"
-    val skunk = "1.1.0-M3"
+    val flyway = "12.5.0"
+    val skunk = "1.1.0-RC1"
     val postgres = "42.7.11"
 
     // --- Auth / Security ---
     val jwtScala = "11.0.4"
-    val bouncycastle = "1.83"
+    val bouncycastle = "1.84"
     val password4j = "1.8.4"
-    val auth0 = "4.5.1"
+    val auth0 = "4.5.2"
     val nimbusJwt = "10.9"
     val nimbusOidc = "11.37"
 
@@ -57,9 +57,9 @@ object Dependencies {
     val pureconfig = "0.17.10"
 
     // --- Testing ---
-    val munit = "1.2.4"
-    val scalacheck = "1.17.0"
-    val scalaTest = "3.2.19"
+    val munit = "1.3.0"
+    val scalacheck = "1.19.0"
+    val scalaTest = "3.2.20"
   }
 
   // ---------------------------------------------------------------------------
@@ -179,7 +179,7 @@ object Dependencies {
   // ---------------------------------------------------------------------------
   lazy val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
   lazy val fs2 = "co.fs2" %% "fs2-core" % Version.fs2
-  lazy val fs2Kafka = "com.github.fd4s" %% "fs2-kafka" % Version.fs2Kafka
+  lazy val fs2Kafka = "org.typelevel" %% "fs2-kafka" % Version.fs2Kafka
 
   // ---------------------------------------------------------------------------
   // Database / Persistence

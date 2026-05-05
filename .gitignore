@@ -33,3 +33,6 @@ metals.sbt
 /.worksheet/
 
 /.scala-build
+
+.claude/
+.mcp.json
