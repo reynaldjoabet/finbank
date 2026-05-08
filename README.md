@@ -661,3 +661,5 @@ given CanEqual[B, A] = CanEqual.derived  // allows: b == a
 - `checking account`: Allows for easy access to funds and often comes bundled with a debit card and checks. No minimum balance is required. Also called a demand deposit account (DDA).
 
 `BaaS utilizes APIs and webhooks to make integration seamless and cost-effective.`
+
+`INFRA (db, http clients, config, logging)`
