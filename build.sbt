@@ -16,7 +16,9 @@ ThisBuild / scalacOptions ++= Seq(
   //   "-Wunused:params",
   //   "-Wvalue-discard",
   "-language:strictEquality",
-  "-Xmax-inlines:100000"
+  "-opt",
+   "-opt-inline:**,!java.**",
+   "-Xmax-inlines:100"
 )
 
 lazy val root = (project in file("."))
@@ -80,7 +82,7 @@ val commonDependencies = Seq(
   postgres,
   zioConfigTypesafe,
   nimbusJoseJwt,
-  nimbusOidc,
+  nimbusOauth2Oidc,
   chimney,
   iron,
   ironChimney,
