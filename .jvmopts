@@ -1,0 +1,11 @@
+-Xms2g
+-Xmx8g
+-Xss2m
+-XX:+UseZGC
+-XX:+ZGenerational
+-XX:InitialCodeCacheSize=512m
+-XX:ReservedCodeCacheSize=512m
+-XX:+UseStringDeduplication
+-XX:+OptimizeStringConcat
+-Dfile.encoding=UTF-8
+-Djava.awt.headless=true
