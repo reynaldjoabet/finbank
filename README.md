@@ -663,3 +663,98 @@ given CanEqual[B, A] = CanEqual.derived  // allows: b == a
 `BaaS utilizes APIs and webhooks to make integration seamless and cost-effective.`
 
 `INFRA (db, http clients, config, logging)`
+
+```scala
+
+import com.github.plokhotnyuk.jsoniter_scala.macros.*
+
+// Fastest codec generation settings
+given CodecMakerConfig = CodecMakerConfig
+  .withSkipUnexpectedFields(true)       // silently ignore unknown JSON fields (default)
+  .withTransientDefault(true)           // omit fields equal to their default (default)
+  .withTransientEmpty(true)             // omit empty collections (default)
+  .withTransientNone(true)              // omit None fields (default)
+  .withCheckFieldDuplication(false)     // skip duplicate-field check at runtime
+  .withRequireDiscriminatorFirst(true)  // ADT discriminator must be first field (default)
+  .withInlineOneValueClasses(true)      // inline single-arg wrapper types = zero
+```  
+
+
+`checkFieldDuplication(false)` is the main non-default tweak — it removes a hash-set lookup on every parsed field. Safe if your JSON source is trusted (internal services, databases). Keep it true for public/untrusted APIs.
+
+`inlineOneValueClasses(true) `inlines wrapper types like case class UserId(value: String) — eliminates boxing at no correctness cost.
+
+```scala
+// Bad for production
+given JsonCodec[MyModel] = JsonCodecMaker.make
+
+// Good
+given JsonValueCodec[MyModel] = JsonCodecMaker.make
+```
+```sh
+ Ultra-Low Latency (trading, order routing, market data)
+Sub-millisecond pauses — ZGC
+
+
+-XX:+UseZGC
+
+# Pre-fault all heap pages — eliminates first-touch latency spikes
+-XX:+AlwaysPreTouch                    # gc_globals.hpp:181, default: false
+
+# NUMA-aware allocation on multi-socket servers
+-XX:+UseNUMA                           # globals.hpp:197, default: false
+
+# Disable periodic scheduled safepoints (set 0 = off, default)
+-XX:GuaranteedSafepointInterval=0      # globals.hpp, diagnostic
+
+# Eliminate service thread wakeup jitter
+-XX:ServiceThreadCleanupInterval=0     # globals.hpp, diagnostic
+
+# Off-heap for order books / market data — bypasses GC entirely
+-XX:MaxDirectMemorySize=16g            # globals.hpp, default: 0 (unlimited)
+
+# ZGC-specific tuning
+-XX:ZFragmentationLimit=5              # z_globals.hpp, default: 5.0
+-XX:ZAllocationSpikeTolerance=2.0      # z_globals.hpp, default: 2.0
+-XX:+ZProactive                        # z_globals.hpp, default: true
+
+# Heap >32GB: disable compressed oops (encoding overhead gone)
+-XX:-UseCompressedOops
+```
+
+**The 6 GC Collectors in JDK 25**
+
+| Flag | Name | Status | Default |
+|---|---|---|---|
+| `-XX:+UseG1GC` | Garbage-First (G1) | Production | Yes — server-class machines |
+| `-XX:+UseParallelGC` | Parallel | Production | Fallback if G1 not included |
+| `-XX:+UseSerialGC` | Serial | Production | Non-server-class machines |
+| `-XX:+UseZGC` | Z Garbage Collector | Production | No |
+| `-XX:+UseShenandoahGC` | Shenandoah | Production | No |
+| `-XX:+UseEpsilonGC` | Epsilon (no-op) | Experimental | No |
+
+```sh
+server-class machine → G1GC  (fallback: Parallel → Serial)
+non-server machine   → SerialGC
+```
+A pause is when the JVM forces every application thread to stop — your code stops executing completely — while the GC does its work. This is called a stop-the-world (STW) event.
+
+`"The Parallel collector is a stop-the-world garbage collector that does parts of the collection using parallel threads."`
+
+The time your threads are frozen = the pause time.
+
+**How each collector handles pauses**
+
+| Collector | Flag | Pause behavior |
+|---|---|---|
+| Serial | `-XX:+UseSerialGC` | Full STW — one thread does all GC |
+| Parallel | `-XX:+UseParallelGC` | Full STW — but many threads in parallel |
+| G1 | `-XX:+UseG1GC` | Short STW pauses + concurrent background work |
+| ZGC | `-XX:+UseZGC` | Almost all work is concurrent — pauses under 1ms |
+| Shenandoah | `-XX:+UseShenandoahGC` | Same — concurrent, pause-focused |
+| Epsilon | `-XX:+UseEpsilonGC` | No GC at all — no pauses, but OOM if heap fills |
+
+```sh
+-XX:MaxGCPauseMillis=<N>    # Tell the GC: "don't pause longer than N ms"
+```
+This is a goal, not a hard guarantee. G1 tries to respect it. ZGC/Shenandoah make it nearly irrelevant because their pauses are already sub-millisecond by design.

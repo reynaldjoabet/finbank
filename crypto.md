@@ -12,7 +12,6 @@ A hash is essentially a digital fingerprint. In a blockchain, this fingerprintin
 2. The hashes of A and B are hashed together to create a "Root Hash."
 3. If any transaction at the bottom changes, the Root Hash at the top changes.
 
-
 The miner who finds this "golden" hash gets to add the block to the chain and receives a Bitcoin reward. This is Proof of Work.
 
 USDC (USD Coin) is a stablecoin.To have the speed of blockchain but the stability of the US Dollar. 1 USDC is always designed to equal $1.00
@@ -60,8 +59,6 @@ ECDSA (Elliptic Curve Digital Signature Algorithm): The most common choice. Bitc
 EdDSA (Edwards-curve Digital Signature Algorithm): A newer, faster, and more secure alternative used by blockchains like Solana and Cardano (specifically the Ed25519 curve).
 
 In a blockchain, "mining" is essentially a brute-force search for a Nonce (a random number) that, when combined with the block's data, produces a SHA-256 hash starting with a specific number of zeros (the Difficulty).
-
-
 
 `hashing is not enough to send packets securely across the wire`
 A MAC solves the above problem
@@ -182,6 +179,5 @@ Imagine you want to authenticate a message. We break the message into 16-byte ch
 
 We turn these text chunks into large numbers. Now, we build a polynomial where these numbers are the coefficients:
 `Tag=(m1​⋅r2)+(m2​⋅r1)+s`
-
 
 (Where s is a second secret part of the key used to "mask" the result).
