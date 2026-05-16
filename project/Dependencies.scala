@@ -11,7 +11,7 @@ object Dependencies {
     val zioLogging = "2.5.3"
     val zioConfig = "4.0.7"
     val zioSchema = "1.8.5"
-    val zioKafka = "3.3.0"
+    val zioKafka = "3.4.0"
 
     // --- HTTP ---
     val http4s = "0.23.34"
@@ -19,7 +19,7 @@ object Dependencies {
     val tapir = "1.13.18"
 
     // --- JSON ---
-    val jsoniter = "2.38.11"
+    val jsoniter = "2.38.12"
     val circe = "0.14.15"
 
     // --- FP ---
@@ -38,7 +38,7 @@ object Dependencies {
     val magnum = "2.0.0-M3"
     val skunk = "1.1.0-RC1"
     val hikaricp = "7.0.2"
-    val flyway = "12.5.0"
+    val flyway = "12.6.1"
     val postgres = "42.7.11"
 
     // --- Security ---
@@ -47,12 +47,12 @@ object Dependencies {
     val password4j = "1.8.4"
     val auth0 = "4.5.2"
     val nimbusJoseJwt = "10.9"
-    val nimbusOidc = "11.37.1"
+    val nimbusOauth2Oidc = "11.37.1"
     val vault = "5.1.0"
 
     // --- Logging ---
     val scribe = "3.19.0"
-    val slf4j = "2.0.17"
+    val slf4j = "2.0.18"
     val logback = "1.5.32"
 
     // --- Cache ---
@@ -61,7 +61,7 @@ object Dependencies {
     // --- Observability ---
     val datadog = "2.35.0"
     val kamon = "2.7.7"
-    val otel4s = "0.16.0"
+    val otel4s = "1.0.0"
 
     // --- Config ---
     val pureconfig = "0.17.10"
@@ -191,14 +191,15 @@ object Dependencies {
   // Security
   lazy val jwtZioJson =
     "com.github.jwt-scala" %% "jwt-zio-json" % Version.jwtScala
+  lazy val jwtCirce="com.github.jwt-scala" %% "jwt-circe" %  Version.jwtScala
   lazy val auth0 = "com.auth0" % "java-jwt" % Version.auth0
   lazy val password4j =
     "com.password4j" % "password4j" % Version.password4j
 
   lazy val nimbusJoseJwt =
     "com.nimbusds" % "nimbus-jose-jwt" % Version.nimbusJoseJwt
-  lazy val nimbusOidc =
-    "com.nimbusds" % "oauth2-oidc-sdk" % Version.nimbusOidc
+  lazy val nimbusOauth2Oidc =
+    "com.nimbusds" % "oauth2-oidc-sdk" % Version.nimbusOauth2Oidc
 
   lazy val bouncycastle =
     "org.bouncycastle" % "bcpkix-jdk18on" % Version.bouncycastle
