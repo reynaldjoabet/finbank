@@ -17,8 +17,8 @@ ThisBuild / scalacOptions ++= Seq(
   //   "-Wvalue-discard",
   "-language:strictEquality",
   "-opt",
-   "-opt-inline:**,!java.**",
-   "-Xmax-inlines:100"
+  "-opt-inline:**,!java.**",
+  "-Xmax-inlines:100"
 )
 
 lazy val root = (project in file("."))

@@ -191,7 +191,7 @@ object Dependencies {
   // Security
   lazy val jwtZioJson =
     "com.github.jwt-scala" %% "jwt-zio-json" % Version.jwtScala
-  lazy val jwtCirce="com.github.jwt-scala" %% "jwt-circe" %  Version.jwtScala
+  lazy val jwtCirce = "com.github.jwt-scala" %% "jwt-circe" % Version.jwtScala
   lazy val auth0 = "com.auth0" % "java-jwt" % Version.auth0
   lazy val password4j =
     "com.password4j" % "password4j" % Version.password4j

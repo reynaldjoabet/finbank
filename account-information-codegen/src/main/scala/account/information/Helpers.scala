@@ -19,15 +19,14 @@ import scala.deriving.*
 import scala.compiletime.*
 import java.io.File
 import java.util.UUID
-import java.time.{LocalDate, LocalDateTime, OffsetDateTime}
-import java.net.URI
+import java.time.{LocalDate, OffsetDateTime}
 import com.github.plokhotnyuk.jsoniter_scala.core.{
   JsonValueCodec,
   writeToString
 }
 
 type Primitive = String | Short | Int | Long | Float | Double | BigDecimal |
-  Boolean | UUID | LocalDate | LocalDateTime | OffsetDateTime | URI
+  Boolean | UUID | LocalDate | OffsetDateTime
 
 enum Authorization:
   case NoAuthorization
