@@ -16,8 +16,6 @@ ThisBuild / scalacOptions ++= Seq(
   //   "-Wunused:params",
   //   "-Wvalue-discard",
   "-language:strictEquality",
-  "-opt",
-  "-opt-inline:**,!java.**",
   "-Xmax-inlines:100"
 )
 
@@ -237,3 +235,5 @@ lazy val `account-information-codegen` =
       ),
       scalacOptions := Seq.empty
     )
+
+Global / onChangedBuildSource := IgnoreSourceChanges
