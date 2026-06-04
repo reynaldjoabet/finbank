@@ -1,8 +1,8 @@
 {
     "generatorName": "scala-sttp4-jsoniter",
-    "inputSpec": "account-information-codegen/src/main/resources/account-information.yaml",
+    "inputSpec": "account-information-codegen/account-information.yaml",
     "outputDir": "account-information-codegen/src/main/scala",
-    "templateDir": "payment-initiation-codegen/custom-templates",
+    "templateDir": "custom-templates",
     "mainPackage": "",
     "apiPackage": "account.information.api",
     "modelPackage": "account.information.models",
