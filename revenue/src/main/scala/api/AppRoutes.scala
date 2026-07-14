@@ -7,9 +7,8 @@ import revenue.service.*
 object AppRoutes {
 
   type Env =
-    AuthService & TaxpayerService & ReturnService & AssessmentService &
-      PaymentService & RefundService & ObjectionService & CaseService &
-      RiskRuleService & DocumentService & IntegrationService & AuditRepo
+    AuthService & TaxpayerService & ReturnService & AssessmentService & PaymentService & RefundService &
+      ObjectionService & CaseService & RiskRuleService & DocumentService & IntegrationService & AuditRepo
 
   val routes: Routes[Env, Nothing] =
     HealthRoutes.routes ++

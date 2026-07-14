@@ -35,8 +35,7 @@ object RegistrationService {
         JsonDecoder
 
   val live: ZLayer[
-    Db & AppConfig & Crypto & PasswordHasher & JwtService & AlloyClient &
-      VouchedClient & MbanqClient & SmsClient,
+    Db & AppConfig & Crypto & PasswordHasher & JwtService & AlloyClient & VouchedClient & MbanqClient & SmsClient,
     Nothing,
     RegistrationService
   ] =
@@ -114,10 +113,8 @@ object RegistrationService {
                 .catchAll(_ => ZIO.succeed(false))
 
               finalKyc =
-                if kycDecision == KycStatus.VERIFIED && idOk then
-                  KycStatus.VERIFIED
-                else if kycDecision == KycStatus.MANUAL_REVIEW_REQUIRED then
-                  KycStatus.MANUAL_REVIEW_REQUIRED
+                if kycDecision == KycStatus.VERIFIED && idOk then KycStatus.VERIFIED
+                else if kycDecision == KycStatus.MANUAL_REVIEW_REQUIRED then KycStatus.MANUAL_REVIEW_REQUIRED
                 else KycStatus.REJECTED
 
               _ <- db.transaction {

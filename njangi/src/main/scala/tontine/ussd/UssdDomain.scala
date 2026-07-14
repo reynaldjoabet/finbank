@@ -4,12 +4,11 @@ import zio.json.*
 import java.util.UUID
 import java.time.Instant
 
-/** A USSD session represents a single unstructured supplementary service data
-  * (USSD) conversation between a feature-phone user and finbank.
+/** A USSD session represents a single unstructured supplementary service data (USSD) conversation between a
+  * feature-phone user and finbank.
   *
-  * USSD conversations are stateful but ephemeral — each request/response pair
-  * is a "hop" in the same session. Sessions expire after `ttlSeconds` of
-  * inactivity (typically 180 s on African networks).
+  * USSD conversations are stateful but ephemeral — each request/response pair is a "hop" in the same session. Sessions
+  * expire after `ttlSeconds` of inactivity (typically 180 s on African networks).
   */
 final case class UssdSession(
     sessionId: String,
@@ -27,8 +26,8 @@ opaque type UssdMenuId = String
 
 /** The complete USSD menu tree.
   *
-  * Each node is identified by a `UssdMenuId`. Navigation is driven by the
-  * user's numeric input (e.g. "1", "2", "0" for back).
+  * Each node is identified by a `UssdMenuId`. Navigation is driven by the user's numeric input (e.g. "1", "2", "0" for
+  * back).
   */
 object UssdMenuId {
   def apply(s: String): UssdMenuId = s

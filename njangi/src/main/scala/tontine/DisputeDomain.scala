@@ -68,9 +68,8 @@ enum DisputeReason derives JsonCodec, CanEqual {
 
 // ── Entities ────────────────────────────────────────────────────────────────
 
-/** A dispute raised against a circle member due to a missed or late
-  * contribution. The lifecycle drives notifications, arbitration, and eventual
-  * penalty or expulsion — all recorded for the member's tontine credit history.
+/** A dispute raised against a circle member due to a missed or late contribution. The lifecycle drives notifications,
+  * arbitration, and eventual penalty or expulsion — all recorded for the member's tontine credit history.
   */
 final case class Dispute(
     id: DisputeId,
@@ -87,9 +86,8 @@ object Dispute {
   given JsonCodec[Dispute] = DeriveJsonCodec.gen[Dispute]
 }
 
-/** Financial penalty recorded against a member after arbitration. The
-  * `amountMinor` is deducted from the member's next payout or collected via
-  * mobile money.
+/** Financial penalty recorded against a member after arbitration. The `amountMinor` is deducted from the member's next
+  * payout or collected via mobile money.
   */
 final case class Penalty(
     id: PenaltyId,

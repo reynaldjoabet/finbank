@@ -26,8 +26,7 @@ object SupportService {
             message: String,
             correlationId: String
         ): IO[AppError, SupportTicket] =
-          if message.trim.isEmpty then
-            ZIO.fail(AppError.Validation("Message required"))
+          if message.trim.isEmpty then ZIO.fail(AppError.Validation("Message required"))
           else
             for {
               id <- Random.nextUUID

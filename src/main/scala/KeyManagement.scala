@@ -1,11 +1,6 @@
 package services.keymanagement
 
-import java.security.interfaces.{
-  ECPrivateKey,
-  ECPublicKey,
-  RSAPrivateKey,
-  RSAPublicKey
-}
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, KeyPairGenerator}
 import java.time.{Duration, Instant}
 
@@ -321,8 +316,7 @@ class DefaultKeyManager(
 
   // ---- Internal: Core Key Resolution ----
 
-  private[keymanagement] def getAllKeysInternalAsync()
-      : Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
+  private[keymanagement] def getAllKeysInternalAsync(): Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
     for {
       // Try cache first, then fall back to store
       cachedResult <- getAllKeysFromCacheAsync()
@@ -531,8 +525,7 @@ class DefaultKeyManager(
     }
   }
 
-  private[keymanagement] def createNewKeysAndAddToCacheAsync()
-      : Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
+  private[keymanagement] def createNewKeysAndAddToCacheAsync(): Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
     for {
       existingCached <- cache.getKeysAsync().map(_.getOrElse(Seq.empty))
 
@@ -549,9 +542,7 @@ class DefaultKeyManager(
       // If all keys are within initialization duration, delay and reload
       finalKeys <-
         if (areAllKeysWithinInitializationDuration(allKeys)) {
-          if (
-            !km.initializationSynchronizationDelay.isZero && !km.initializationSynchronizationDelay.isNegative
-          ) {
+          if (!km.initializationSynchronizationDelay.isZero && !km.initializationSynchronizationDelay.isNegative) {
             logger.trace(
               "All keys are new; delaying before reloading keys from store by InitializationSynchronizationDelay for {}.",
               km.initializationSynchronizationDelay
@@ -577,8 +568,7 @@ class DefaultKeyManager(
 
   // ---- Internal: Cache ----
 
-  private[keymanagement] def getAllKeysFromCacheAsync()
-      : Future[Seq[KeyContainer]] = {
+  private[keymanagement] def getAllKeysFromCacheAsync(): Future[Seq[KeyContainer]] = {
     cache.getKeysAsync().map {
       case Some(keys) =>
         logger.trace("Cache hit when loading all keys.")
@@ -595,9 +585,7 @@ class DefaultKeyManager(
     if (keys.nonEmpty) {
       val duration =
         if (areAllKeysWithinInitializationDuration(keys)) {
-          if (
-            !km.initializationKeyCacheDuration.isZero && !km.initializationKeyCacheDuration.isNegative
-          ) {
+          if (!km.initializationKeyCacheDuration.isZero && !km.initializationKeyCacheDuration.isNegative) {
             logger.trace(
               "Caching keys with InitializationKeyCacheDuration for {}",
               km.initializationKeyCacheDuration
@@ -748,9 +736,7 @@ class DefaultKeyManager(
     if (km.initializationDuration == Duration.ZERO) return false
 
     val nonExpired = filterExpiredKeys(keys)
-    nonExpired.forall(k =>
-      km.isWithinInitializationDuration(clock.getAge(k.created))
-    )
+    nonExpired.forall(k => km.isWithinInitializationDuration(clock.getAge(k.created)))
   }
 
   // ---- Internal: Signing Key Selection ----
@@ -760,9 +746,7 @@ class DefaultKeyManager(
   ): (Boolean, Seq[KeyContainer]) = {
     val signingKeys = getAllCurrentSigningKeys(keys)
     val success = signingKeys.size == km.allowedSigningAlgorithmNames.size &&
-      signingKeys.forall(k =>
-        km.allowedSigningAlgorithmNames.contains(k.algorithm)
-      )
+      signingKeys.forall(k => km.allowedSigningAlgorithmNames.contains(k.algorithm))
     (success, signingKeys)
   }
 

@@ -17,10 +17,9 @@ import AuthHelpers.*
 object AppRoutes {
 
   type Env =
-    AppConfig & JwtService & Metrics & RateLimiter & RegistrationService &
-      AuthService & AccountService & FundingService & TransferService &
-      FamilyService & PaycheckService & LoanService & SupportService &
-      AdminService & CardService
+    AppConfig & JwtService & Metrics & RateLimiter & RegistrationService & AuthService & AccountService &
+      FundingService & TransferService & FamilyService & PaycheckService & LoanService & SupportService & AdminService &
+      CardService
 
   private def withMetrics(
       name: String,
@@ -50,39 +49,37 @@ object AppRoutes {
       },
 
       // ---- Registration ----
-      Method.POST / "v1" / "registration" / "start" -> handler {
-        (req: Request) =>
-          withMetrics(
-            "registration_start",
-            (for {
-              cid <- ZIO.succeed(correlationId(req))
-              dto <- parseJson[StartRegistrationRequest](req)
-              res <- ZIO
-                .serviceWithZIO[RegistrationService](
-                  _.start(dto.toProfile, cid)
-                )
-                .mapError(mapError)
-            } yield jsonResponse(
-              StartRegistrationResponse(res._1, res._2),
-              Status.Created
-            )).mapError(identity)
-          )
+      Method.POST / "v1" / "registration" / "start" -> handler { (req: Request) =>
+        withMetrics(
+          "registration_start",
+          (for {
+            cid <- ZIO.succeed(correlationId(req))
+            dto <- parseJson[StartRegistrationRequest](req)
+            res <- ZIO
+              .serviceWithZIO[RegistrationService](
+                _.start(dto.toProfile, cid)
+              )
+              .mapError(mapError)
+          } yield jsonResponse(
+            StartRegistrationResponse(res._1, res._2),
+            Status.Created
+          )).mapError(identity)
+        )
       },
 
-      Method.POST / "v1" / "registration" / "confirm" -> handler {
-        (req: Request) =>
-          withMetrics(
-            "registration_confirm",
-            (for {
-              cid <- ZIO.succeed(correlationId(req))
-              dto <- parseJson[ConfirmRegistrationRequest](req)
-              res <- ZIO
-                .serviceWithZIO[RegistrationService](
-                  _.confirm(dto.userId, dto.smsCode, dto.password, cid)
-                )
-                .mapError(mapError)
-            } yield jsonResponse(res, Status.Ok)).mapError(identity)
-          )
+      Method.POST / "v1" / "registration" / "confirm" -> handler { (req: Request) =>
+        withMetrics(
+          "registration_confirm",
+          (for {
+            cid <- ZIO.succeed(correlationId(req))
+            dto <- parseJson[ConfirmRegistrationRequest](req)
+            res <- ZIO
+              .serviceWithZIO[RegistrationService](
+                _.confirm(dto.userId, dto.smsCode, dto.password, cid)
+              )
+              .mapError(mapError)
+          } yield jsonResponse(res, Status.Ok)).mapError(identity)
+        )
       },
 
       // ---- Auth ----
@@ -213,35 +210,34 @@ object AppRoutes {
         )
       },
 
-      Method.POST / "v1" / "funding" / "cash-deposit" -> handler {
-        (req: Request) =>
-          withMetrics(
-            "funding_cash_deposit",
-            (for {
-              ctx <- requireAuth(req)
-              cid <- ZIO.succeed(correlationId(req))
-              cfg <- ZIO.service[AppConfig]
-              _ <- ZIO
-                .serviceWithZIO[RateLimiter](
-                  _.check(
-                    s"${ctx.userId}:funding_cash",
-                    cfg.rateLimit.requestsPerMinute
-                  )
+      Method.POST / "v1" / "funding" / "cash-deposit" -> handler { (req: Request) =>
+        withMetrics(
+          "funding_cash_deposit",
+          (for {
+            ctx <- requireAuth(req)
+            cid <- ZIO.succeed(correlationId(req))
+            cfg <- ZIO.service[AppConfig]
+            _ <- ZIO
+              .serviceWithZIO[RateLimiter](
+                _.check(
+                  s"${ctx.userId}:funding_cash",
+                  cfg.rateLimit.requestsPerMinute
                 )
-                .mapError(mapError)
-              dto <- parseJson[CashDepositRequest](req)
-              acc <- ZIO
-                .serviceWithZIO[FundingService](
-                  _.cashDeposit(
-                    ctx.userId,
-                    Money(dto.amountMinor, dto.currency),
-                    dto.branchRef,
-                    cid
-                  )
+              )
+              .mapError(mapError)
+            dto <- parseJson[CashDepositRequest](req)
+            acc <- ZIO
+              .serviceWithZIO[FundingService](
+                _.cashDeposit(
+                  ctx.userId,
+                  Money(dto.amountMinor, dto.currency),
+                  dto.branchRef,
+                  cid
                 )
-                .mapError(mapError)
-            } yield jsonResponse(acc, Status.Ok)).mapError(identity)
-          )
+              )
+              .mapError(mapError)
+          } yield jsonResponse(acc, Status.Ok)).mapError(identity)
+        )
       },
 
       // ---- Transfers ----
@@ -361,21 +357,20 @@ object AppRoutes {
         )
       },
 
-      Method.POST / "v1" / "family" / "distribute" -> handler {
-        (req: Request) =>
-          withMetrics(
-            "family_distribute",
-            (for {
-              ctx <- requireAuth(req)
-              cid <- ZIO.succeed(correlationId(req))
-              dto <- parseJson[FamilyDistributeRequest](req)
-              ts <- ZIO
-                .serviceWithZIO[FamilyService](
-                  _.distribute(ctx.userId, dto.groupId, dto.payouts, cid)
-                )
-                .mapError(mapError)
-            } yield jsonResponse(ts, Status.Created)).mapError(identity)
-          )
+      Method.POST / "v1" / "family" / "distribute" -> handler { (req: Request) =>
+        withMetrics(
+          "family_distribute",
+          (for {
+            ctx <- requireAuth(req)
+            cid <- ZIO.succeed(correlationId(req))
+            dto <- parseJson[FamilyDistributeRequest](req)
+            ts <- ZIO
+              .serviceWithZIO[FamilyService](
+                _.distribute(ctx.userId, dto.groupId, dto.payouts, cid)
+              )
+              .mapError(mapError)
+          } yield jsonResponse(ts, Status.Created)).mapError(identity)
+        )
       },
 
       // ---- Paycheck ----
@@ -490,19 +485,18 @@ object AppRoutes {
         )
       },
 
-      Method.POST / "admin" / "kyc" / uuid("userId") / "status" -> handler {
-        (userId: java.util.UUID, req: Request) =>
-          withMetrics(
-            "admin_kyc_set",
-            (for {
-              _ <- requireAdmin(req)
-              cid <- ZIO.succeed(correlationId(req))
-              dto <- parseJson[AdminSetKycRequest](req)
-              _ <- ZIO
-                .serviceWithZIO[AdminService](_.setKyc(userId, dto.status, cid))
-                .mapError(mapError)
-            } yield Response.text("ok")).mapError(identity)
-          )
+      Method.POST / "admin" / "kyc" / uuid("userId") / "status" -> handler { (userId: java.util.UUID, req: Request) =>
+        withMetrics(
+          "admin_kyc_set",
+          (for {
+            _ <- requireAdmin(req)
+            cid <- ZIO.succeed(correlationId(req))
+            dto <- parseJson[AdminSetKycRequest](req)
+            _ <- ZIO
+              .serviceWithZIO[AdminService](_.setKyc(userId, dto.status, cid))
+              .mapError(mapError)
+          } yield Response.text("ok")).mapError(identity)
+        )
       },
 
       Method.POST / "admin" / "cards" / uuid("cardId") / "delivery" -> handler {

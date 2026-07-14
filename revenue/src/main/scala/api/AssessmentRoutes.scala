@@ -25,21 +25,16 @@ object AssessmentRoutes {
           body <- JsonSupport.decode[AssessmentCreate](req)
           svc <- ZIO.service[AssessmentService]
           out <- svc.create(body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
-      Method.GET / "api" / "v1" / "assessments" / string("id") -> handler {
-        (id: String, req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            _ <- HttpAuth.requireAny(p, Set(Role.Officer, Role.Admin))
-            svc <- ZIO.service[AssessmentService]
-            out <- svc.get(AssessmentId(id), p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.GET / "api" / "v1" / "assessments" / string("id") -> handler { (id: String, req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          _ <- HttpAuth.requireAny(p, Set(Role.Officer, Role.Admin))
+          svc <- ZIO.service[AssessmentService]
+          out <- svc.get(AssessmentId(id), p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.GET / "api" / "v1" / "taxpayers" / string(
@@ -49,20 +44,15 @@ object AssessmentRoutes {
           p <- HttpAuth.principal(req)
           svc <- ZIO.service[AssessmentService]
           out <- svc.listLiabilities(TaxpayerId(tp), statusParam(req), p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
-      Method.GET / "api" / "v1" / "liabilities" / string("id") -> handler {
-        (id: String, req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            svc <- ZIO.service[AssessmentService]
-            out <- svc.getLiability(LiabilityId(id), p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.GET / "api" / "v1" / "liabilities" / string("id") -> handler { (id: String, req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          svc <- ZIO.service[AssessmentService]
+          out <- svc.getLiability(LiabilityId(id), p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "liabilities" / string(
@@ -73,9 +63,7 @@ object AssessmentRoutes {
           _ <- HttpAuth.requireAny(p, Set(Role.Officer, Role.Admin))
           svc <- ZIO.service[AssessmentService]
           out <- svc.recalcLiability(LiabilityId(id), p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       }
     )
 }

@@ -17,11 +17,10 @@ enum ClearingRail derives CanEqual, zio.json.JsonCodec {
   case Internal // Intra-platform settlement (zero fee)
 }
 
-/** A cross-border clearing request — sender funds arrive in stablecoin and are
-  * converted to the recipient's local currency at the other end.
+/** A cross-border clearing request — sender funds arrive in stablecoin and are converted to the recipient's local
+  * currency at the other end.
   *
-  * Workflow (sub-1 % cost): Sender fiat → on-ramp (1× FX) → USDC on L2 →
-  * off-ramp (1× FX) → Recipient fiat
+  * Workflow (sub-1 % cost): Sender fiat → on-ramp (1× FX) → USDC on L2 → off-ramp (1× FX) → Recipient fiat
   */
 final case class ClearingRequest(
     id: UUID,
@@ -52,13 +51,11 @@ final case class ClearingRecord(
 
 /** Stablecoin Clearing Hub.
   *
-  * Replaces the expensive multi-hop correspondent banking model with a
-  * two-FX-touch route via stablecoins:
+  * Replaces the expensive multi-hop correspondent banking model with a two-FX-touch route via stablecoins:
   *
   * MUR (sender) ─onRamp─► USDC on Stellar ─offRamp─► XAF (recipient)
   *
-  * Both legs are executed atomically at the locked rate. If either leg fails
-  * the transfer is reversed.
+  * Both legs are executed atomically at the locked rate. If either leg fails the transfer is reversed.
   */
 trait StablecoinClearingService {
   def initiate(
@@ -139,9 +136,7 @@ object StablecoinClearingService {
                 createdAt = now
               )
               // --- stub: replace with real on-ramp API call ---
-              onChainHash <- Random.nextUUID.map(u =>
-                s"0x${u.toString.replace("-", "")}"
-              )
+              onChainHash <- Random.nextUUID.map(u => s"0x${u.toString.replace("-", "")}")
               _ <- ZIO.logInfo(
                 s"[StablecoinClearing] On-chain tx=$onChainHash rail=$rail " +
                   s"${sendAmount.amountMinor} ${sendAmount.currency} → " +

@@ -13,14 +13,12 @@ import java.util.UUID
   * Lifecycle:
   *   1. TPP calls `create(...)` → receives a raw bearer token (shown once).
   *   2. User authorises the consent via the finbank app (`authorise`).
-  *   3. TPP presents the bearer token; `resolve(token)` returns the `Consent`
-  *      and the service validates scope + expiry.
+  *   3. TPP presents the bearer token; `resolve(token)` returns the `Consent` and the service validates scope + expiry.
   *   4. User or system can `revoke(id)` at any time.
   *
   * Security:
   *   - The raw token is generated once and never stored.
-  *   - Only the SHA-256 hash of the token is persisted (same pattern as refresh
-  *     tokens in `TokenHash`).
+  *   - Only the SHA-256 hash of the token is persisted (same pattern as refresh tokens in `TokenHash`).
   *   - `resolve(rawToken)` hashes the input and looks up by hash.
   */
 trait ConsentService {

@@ -39,8 +39,7 @@ object TransferService {
       new TransferService {
 
         private def risk(amount: Money): (Boolean, Option[String]) =
-          if amount.amountMinor >= cfg.fraud.flagThresholdMinor then
-            (true, Some("THRESHOLD_EXCEEDED"))
+          if amount.amountMinor >= cfg.fraud.flagThresholdMinor then (true, Some("THRESHOLD_EXCEEDED"))
           else (false, None)
 
         override def p2p(
@@ -51,10 +50,8 @@ object TransferService {
             idempotencyKey: Option[String],
             correlationId: String
         ): IO[AppError, Transfer] =
-          if from == to then
-            ZIO.fail(AppError.Validation("Cannot transfer to self"))
-          else if amount.amountMinor <= 0 then
-            ZIO.fail(AppError.Validation("Amount must be > 0"))
+          if from == to then ZIO.fail(AppError.Validation("Cannot transfer to self"))
+          else if amount.amountMinor <= 0 then ZIO.fail(AppError.Validation("Amount must be > 0"))
           else
             for {
               existing <- idempotencyKey match {
@@ -156,10 +153,8 @@ object TransferService {
             idempotencyKey: Option[String],
             correlationId: String
         ): IO[AppError, Transfer] =
-          if destination.trim.isEmpty then
-            ZIO.fail(AppError.Validation("Destination required"))
-          else if amount.amountMinor <= 0 then
-            ZIO.fail(AppError.Validation("Amount must be > 0"))
+          if destination.trim.isEmpty then ZIO.fail(AppError.Validation("Destination required"))
+          else if amount.amountMinor <= 0 then ZIO.fail(AppError.Validation("Amount must be > 0"))
           else
             for {
               existing <- idempotencyKey match {

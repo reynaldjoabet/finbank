@@ -33,8 +33,7 @@ object FamilyService {
             members: Set[UUID],
             correlationId: String
         ): IO[AppError, FamilyGroup] =
-          if members.isEmpty then
-            ZIO.fail(AppError.Validation("At least 1 member required"))
+          if members.isEmpty then ZIO.fail(AppError.Validation("At least 1 member required"))
           else
             db.transaction {
               val group = FamilyRepo.create(owner, members)

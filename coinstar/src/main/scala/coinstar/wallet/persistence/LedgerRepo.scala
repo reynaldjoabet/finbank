@@ -34,8 +34,7 @@ object LedgerRepo {
       _.addEntry(txId, walletId, asset, deltaMinor)
     )
 }
-final class LedgerRepoLive(quill: Quill.Postgres[SnakeCase])
-    extends LedgerRepo {
+final class LedgerRepoLive(quill: Quill.Postgres[SnakeCase]) extends LedgerRepo {
   import quill.*
 
   private inline def txs = quote(querySchema[LedgerTxRow]("ledger_txs"))

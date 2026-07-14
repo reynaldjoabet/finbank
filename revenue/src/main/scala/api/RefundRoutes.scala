@@ -12,17 +12,14 @@ object RefundRoutes {
 
   val routes: Routes[Env, Nothing] =
     Routes(
-      Method.POST / "api" / "v1" / "refunds" / "claims" -> handler {
-        (req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
-            body <- JsonSupport.decode[RefundClaimCreate](req)
-            svc <- ZIO.service[RefundService]
-            out <- svc.create(body, p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.POST / "api" / "v1" / "refunds" / "claims" -> handler { (req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          body <- JsonSupport.decode[RefundClaimCreate](req)
+          svc <- ZIO.service[RefundService]
+          out <- svc.create(body, p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.GET / "api" / "v1" / "refunds" / "claims" / string(
@@ -32,9 +29,7 @@ object RefundRoutes {
           p <- HttpAuth.principal(req)
           svc <- ZIO.service[RefundService]
           out <- svc.get(RefundId(id), p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.GET / "api" / "v1" / "taxpayers" / string(
@@ -44,9 +39,7 @@ object RefundRoutes {
           p <- HttpAuth.principal(req)
           svc <- ZIO.service[RefundService]
           out <- svc.listByTaxpayer(TaxpayerId(tp), p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "refunds" / "claims" / string(
@@ -64,9 +57,7 @@ object RefundRoutes {
             .when(body.entityId != id)
           docs <- ZIO.service[DocumentService]
           out <- docs.upload(body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "refunds" / "claims" / string(
@@ -78,9 +69,7 @@ object RefundRoutes {
           body <- JsonSupport.decode[RefundDecision](req)
           svc <- ZIO.service[RefundService]
           out <- svc.approve(RefundId(id), body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "refunds" / "claims" / string(
@@ -92,9 +81,7 @@ object RefundRoutes {
           body <- JsonSupport.decode[RefundDecision](req)
           svc <- ZIO.service[RefundService]
           out <- svc.reject(RefundId(id), body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       }
     )
 }

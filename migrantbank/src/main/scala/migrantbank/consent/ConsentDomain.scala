@@ -23,12 +23,10 @@ object ConsentId {
 
 /** Granular data-sharing scopes — inspired by PSD2 / Open Banking UK.
   *
-  * A consent token may carry one or more scopes. Each scope gates a specific
-  * resource:
+  * A consent token may carry one or more scopes. Each scope gates a specific resource:
   *
-  * `ReadBalance` → GET /v1/accounts/{id}/balance `ReadTransactions` → GET
-  * /v1/accounts/{id}/transactions `ReadProfile` → GET /v1/users/{id}/profile
-  * (name, phone) `InitiatePayment` → POST /v1/transfers (on behalf of the user)
+  * `ReadBalance` → GET /v1/accounts/{id}/balance `ReadTransactions` → GET /v1/accounts/{id}/transactions `ReadProfile`
+  * → GET /v1/users/{id}/profile (name, phone) `InitiatePayment` → POST /v1/transfers (on behalf of the user)
   * `ReadTontineScore` → GET /v1/members/{id}/score (credit signal)
   */
 enum ConsentScope derives JsonCodec, CanEqual {
@@ -50,9 +48,9 @@ enum ConsentStatus derives JsonCodec, CanEqual {
 
 /** A consent grant.
   *
-  * The `token` is an opaque bearer secret handed to the third-party (TPP). The
-  * TPP includes it as `Authorization: Bearer <token>` on resource calls. The
-  * `ConsentService` resolves the token → `Consent` and checks scope + expiry.
+  * The `token` is an opaque bearer secret handed to the third-party (TPP). The TPP includes it as
+  * `Authorization: Bearer <token>` on resource calls. The `ConsentService` resolves the token → `Consent` and checks
+  * scope + expiry.
   */
 final case class Consent(
     id: ConsentId,

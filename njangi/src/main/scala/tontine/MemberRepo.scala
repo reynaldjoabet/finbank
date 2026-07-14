@@ -5,8 +5,7 @@ trait MemberRepo {
   def get(id: MemberId): IO[AppError.NotFound, Member]
 }
 
-final case class MemberRepoLive(ref: Ref[Map[MemberId, Member]])
-    extends MemberRepo {
+final case class MemberRepoLive(ref: Ref[Map[MemberId, Member]]) extends MemberRepo {
   def create(member: Member): UIO[Unit] =
     ref.update(_ + (member.id -> member))
 

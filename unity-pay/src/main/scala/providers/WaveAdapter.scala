@@ -5,9 +5,8 @@ import zio.*
 
 /** Wave adapter (Senegal, Côte d'Ivoire — near-zero fee model).
   *
-  * Wave charges ~0% for domestic transfers, making it the preferred rail for
-  * WAEMU-zone intra-country payments. Stub — replace with Wave Business API
-  * calls once credentials are available.
+  * Wave charges ~0% for domestic transfers, making it the preferred rail for WAEMU-zone intra-country payments. Stub —
+  * replace with Wave Business API calls once credentials are available.
   */
 final class WaveAdapter extends MobileMoneyProvider {
 

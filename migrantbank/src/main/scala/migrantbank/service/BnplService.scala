@@ -10,8 +10,8 @@ import java.util.UUID
   * The merchant requests a BNPL plan for a customer. The service:
   *   1. Checks the customer's `CreditBand`.
   *   2. Verifies the purchase amount fits within the band's `maxLoanMinor`.
-  *   3. Issues a virtual card via `CardService` (or reuses an existing one)
-  *      with a spending limit equal to the purchase amount.
+  *   3. Issues a virtual card via `CardService` (or reuses an existing one) with a spending limit equal to the purchase
+  *      amount.
   *   4. Creates an instalment schedule with `instalments` equal payments.
   */
 final case class BnplPlan(
@@ -101,9 +101,7 @@ object BnplService {
             // Issue a virtual card for this BNPL plan
             existingCards <- cardSvc.list(userId)
             card <- existingCards
-              .find(c =>
-                c.kind == CardKind.VIRTUAL && c.status == CardStatus.ACTIVE
-              ) match {
+              .find(c => c.kind == CardKind.VIRTUAL && c.status == CardStatus.ACTIVE) match {
               case Some(c) => ZIO.succeed(c)
               case None    =>
                 ZIO.fail(
@@ -187,9 +185,7 @@ object BnplService {
               .fail(AppError.Conflict(s"Instalment $sequence is already paid"))
               .when(inst.paid)
             updated = inst.copy(paid = true)
-            newList = allInsts.map(i =>
-              if i.sequence == sequence then updated else i
-            )
+            newList = allInsts.map(i => if i.sequence == sequence then updated else i)
             _ <- instStore.update(_ + (planId -> newList))
             // Check if all paid → mark plan as FullyRepaid
             _ <- ZIO.when(newList.forall(_.paid)) {

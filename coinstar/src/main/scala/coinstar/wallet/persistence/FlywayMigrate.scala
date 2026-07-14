@@ -11,8 +11,7 @@ import javax.sql.DataSource
   *   - a separate "migrate" job in CI/CD,
   *   - or run it on startup only for certain environments.
   *
-  * This layer is a *pass-through* DataSource layer: it returns the same
-  * DataSource after migrations succeed.
+  * This layer is a *pass-through* DataSource layer: it returns the same DataSource after migrations succeed.
   */
 object FlywayMigrate {
 

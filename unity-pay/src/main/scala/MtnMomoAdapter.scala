@@ -7,10 +7,9 @@ import java.util.UUID
 
 /** MTN Mobile Money adapter.
   *
-  * In production this calls the MTN MoMo OpenAPI (sandbox at
-  * https://sandbox.momodeveloper.mtn.com). All real HTTP calls are stubbed
-  * here; replace the `ZIO.succeed(...)` stubs with sttp / zio-http calls once
-  * the provider credentials are available in `AppConfig`.
+  * In production this calls the MTN MoMo OpenAPI (sandbox at https://sandbox.momodeveloper.mtn.com). All real HTTP
+  * calls are stubbed here; replace the `ZIO.succeed(...)` stubs with sttp / zio-http calls once the provider
+  * credentials are available in `AppConfig`.
   *
   * Supported currencies: XAF (CEMAC), XOF (WAEMU), GHS, UGX, ZMW, …
   */

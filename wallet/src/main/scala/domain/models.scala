@@ -92,8 +92,6 @@ sealed trait AppError extends Throwable
 object AppError {
   final case class NotFound(msg: String) extends Exception(msg) with AppError
   final case class Validation(msg: String) extends Exception(msg) with AppError
-  final case class ProviderError(msg: String)
-      extends Exception(msg)
-      with AppError
+  final case class ProviderError(msg: String) extends Exception(msg) with AppError
   final case class Conflict(msg: String) extends Exception(msg) with AppError
 }

@@ -14,8 +14,7 @@ object Main extends ZIOAppDefault {
   private val layers: ZLayer[
     Any,
     Nothing,
-    CircleRepo & MemberRepo & (ContributionRepo & AuditRepo) &
-      (MobileMoneyGateway & OpenBankingClient) &
+    CircleRepo & MemberRepo & (ContributionRepo & AuditRepo) & (MobileMoneyGateway & OpenBankingClient) &
       (CircleService & ContributionService & ScoreService)
   ] =
     (CircleRepo.layer ++ MemberRepo.layer ++ ContributionRepo.layer ++ AuditRepo.layer) >+>

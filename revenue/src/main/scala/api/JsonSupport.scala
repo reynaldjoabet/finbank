@@ -8,9 +8,8 @@ import revenue.service.ApiError
 object JsonSupport {
 
   def decode[A: JsonDecoder](req: Request): IO[ApiError, A] = {
-    req.body.asString.orElseFail(ApiError.BadRequest("Missing body")).flatMap {
-      body =>
-        ZIO.fromEither(body.fromJson[A].left.map(ApiError.BadRequest(_)))
+    req.body.asString.orElseFail(ApiError.BadRequest("Missing body")).flatMap { body =>
+      ZIO.fromEither(body.fromJson[A].left.map(ApiError.BadRequest(_)))
     }
   }
 

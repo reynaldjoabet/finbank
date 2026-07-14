@@ -13,29 +13,23 @@ object AdminRoutes {
 
   val routes: Routes[Env, Nothing] =
     Routes(
-      Method.GET / "api" / "v1" / "admin" / "risk-rules" -> handler {
-        (req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            _ <- HttpAuth.requireAny(p, Set(Role.Admin))
-            svc <- ZIO.service[RiskRuleService]
-            out <- svc.list(p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.GET / "api" / "v1" / "admin" / "risk-rules" -> handler { (req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          _ <- HttpAuth.requireAny(p, Set(Role.Admin))
+          svc <- ZIO.service[RiskRuleService]
+          out <- svc.list(p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
-      Method.POST / "api" / "v1" / "admin" / "risk-rules" -> handler {
-        (req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            _ <- HttpAuth.requireAny(p, Set(Role.Admin))
-            body <- JsonSupport.decode[RiskRuleCreate](req)
-            svc <- ZIO.service[RiskRuleService]
-            out <- svc.create(body, p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.POST / "api" / "v1" / "admin" / "risk-rules" -> handler { (req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          _ <- HttpAuth.requireAny(p, Set(Role.Admin))
+          body <- JsonSupport.decode[RiskRuleCreate](req)
+          svc <- ZIO.service[RiskRuleService]
+          out <- svc.create(body, p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "admin" / "risk-rules" / string(
@@ -46,9 +40,7 @@ object AdminRoutes {
           _ <- HttpAuth.requireAny(p, Set(Role.Admin))
           svc <- ZIO.service[RiskRuleService]
           out <- svc.enable(RiskRuleId(id), enabled = true, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "admin" / "risk-rules" / string(
@@ -59,21 +51,16 @@ object AdminRoutes {
           _ <- HttpAuth.requireAny(p, Set(Role.Admin))
           svc <- ZIO.service[RiskRuleService]
           out <- svc.enable(RiskRuleId(id), enabled = false, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
-      Method.GET / "api" / "v1" / "backoffice" / "audit" -> handler {
-        (req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            _ <- HttpAuth.requireAny(p, Set(Role.Officer, Role.Admin))
-            repo <- ZIO.service[AuditRepo]
-            out <- repo.latest(200)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.GET / "api" / "v1" / "backoffice" / "audit" -> handler { (req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          _ <- HttpAuth.requireAny(p, Set(Role.Officer, Role.Admin))
+          repo <- ZIO.service[AuditRepo]
+          out <- repo.latest(200)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       }
     )
 }

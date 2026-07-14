@@ -34,7 +34,6 @@ case class BillingServiceLive(
 }
 
 object BillingService {
-  val layer
-      : URLayer[DwollaService & PlaidService & AccountingSync, BillingService] =
+  val layer: URLayer[DwollaService & PlaidService & AccountingSync, BillingService] =
     ZLayer.fromFunction(BillingServiceLive.apply _)
 }

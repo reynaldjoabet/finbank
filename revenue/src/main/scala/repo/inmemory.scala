@@ -41,8 +41,7 @@ object inmemory {
       )
   }
 
-  final class InMemoryReturnRepo private (data: Ref[Map[ReturnId, TaxReturn]])
-      extends ReturnRepo {
+  final class InMemoryReturnRepo private (data: Ref[Map[ReturnId, TaxReturn]]) extends ReturnRepo {
 
     override def createDraft(
         req: ReturnDraftCreate,
@@ -72,7 +71,7 @@ object inmemory {
     ): IO[RepoError, TaxReturn] = {
       data.modify { m =>
         m.get(id) match {
-          case None => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
+          case None       => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
           case Some(prev) =>
             val next = prev.copy(payload = payload, updatedAtEpochMs = nowMs)
             (ZIO.succeed(next), m.updated(id, next))
@@ -88,7 +87,7 @@ object inmemory {
     ): IO[RepoError, TaxReturn] = {
       data.modify { m =>
         m.get(id) match {
-          case None => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
+          case None       => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
           case Some(prev) =>
             val next = prev.copy(
               status = status,
@@ -107,7 +106,7 @@ object inmemory {
     ): IO[RepoError, TaxReturn] = {
       data.modify { m =>
         m.get(id) match {
-          case None => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
+          case None       => (ZIO.fail(RepoError.NotFound("Return", id.value)), m)
           case Some(prev) =>
             val next = prev.copy(
               id = newId,
@@ -163,7 +162,7 @@ object inmemory {
     ): IO[RepoError, RiskRule] = {
       data.modify { m =>
         m.get(id) match {
-          case None => (ZIO.fail(RepoError.NotFound("RiskRule", id.value)), m)
+          case None       => (ZIO.fail(RepoError.NotFound("RiskRule", id.value)), m)
           case Some(prev) =>
             val next = prev.copy(enabled = enabled, updatedAtEpochMs = nowMs)
             (ZIO.succeed(next), m.updated(id, next))
@@ -270,8 +269,7 @@ object inmemory {
       }
   }
 
-  final class InMemoryRefundRepo private (data: Ref[Map[RefundId, RefundClaim]])
-      extends RefundRepo {
+  final class InMemoryRefundRepo private (data: Ref[Map[RefundId, RefundClaim]]) extends RefundRepo {
     override def create(claim: RefundClaim): IO[RepoError, RefundClaim] =
       data.update(_ + (claim.id -> claim)).as(claim)
     override def get(id: RefundId): IO[RepoError, Option[RefundClaim]] =
@@ -413,8 +411,7 @@ object inmemory {
       }
   }
 
-  final class InMemoryAuditRepo private (events: Ref[Vector[AuditEvent]])
-      extends AuditRepo {
+  final class InMemoryAuditRepo private (events: Ref[Vector[AuditEvent]]) extends AuditRepo {
     override def append(evt: AuditEvent): UIO[Unit] =
       events.update(_ :+ evt).unit
     override def latest(limit: Int): UIO[List[AuditEvent]] =
@@ -427,8 +424,7 @@ object inmemory {
       )
   }
 
-  final class InMemoryUserRepo private (users: Map[String, User])
-      extends UserRepo {
+  final class InMemoryUserRepo private (users: Map[String, User]) extends UserRepo {
     override def findByUsername(username: String): IO[RepoError, Option[User]] =
       ZIO.succeed(users.get(username))
     override def get(id: UserId): IO[RepoError, Option[User]] =

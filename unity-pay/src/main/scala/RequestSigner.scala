@@ -7,8 +7,8 @@ import sttp.client4._
 
 object RequestSigner {
 
-  /** Generates an HMAC-SHA256 signature for a JSON payload. Useful for webhook
-    * verification or high-security internal APIs.
+  /** Generates an HMAC-SHA256 signature for a JSON payload. Useful for webhook verification or high-security internal
+    * APIs.
     */
   def signBody(body: String, secret: String): String = {
     val hmacSha256 = Mac.getInstance("HmacSHA256")

@@ -5,15 +5,13 @@ import java.time.Instant
 
 /** Lightweight ISO 20022 `pacs.008` (FIToFICustomerCreditTransfer) builder.
   *
-  * This produces an XML string that can be submitted to regional RTGS/ACH
-  * systems in Africa:
+  * This produces an XML string that can be submitted to regional RTGS/ACH systems in Africa:
   *   - GIMAC / SICA — CEMAC zone (XAF)
   *   - BCEAO STAR — WAEMU zone (XOF)
   *   - PAPSS — Pan-African Payment and Settlement System
   *
-  * The builder covers the minimal mandatory fields required by all three
-  * schemes. Additional optional blocks (regulatory reporting, remittance
-  * information, etc.) can be appended via `withRemittanceInfo`.
+  * The builder covers the minimal mandatory fields required by all three schemes. Additional optional blocks
+  * (regulatory reporting, remittance information, etc.) can be appended via `withRemittanceInfo`.
   *
   * Reference: ISO 20022 `pacs.008.001.10` schema.
   */
@@ -99,9 +97,8 @@ object Pacs008Message {
       .replace("\"", "&quot;")
       .replace("'", "&apos;")
 
-  /** Convert minor-unit Long to a decimal string with correct scale. XAF / XOF
-    * have 0 decimal places (1 XAF = 1 minor unit). All others assumed 2 decimal
-    * places.
+  /** Convert minor-unit Long to a decimal string with correct scale. XAF / XOF have 0 decimal places (1 XAF = 1 minor
+    * unit). All others assumed 2 decimal places.
     */
   private def formatMinor(a: Amount): String =
     a.currency match {
@@ -110,8 +107,7 @@ object Pacs008Message {
     }
 }
 
-/** ZIO service that builds and validates pacs.008 messages before submission to
-  * a regional clearing system.
+/** ZIO service that builds and validates pacs.008 messages before submission to a regional clearing system.
   */
 trait Iso20022Service {
   def buildPacs008(

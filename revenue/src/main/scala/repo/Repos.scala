@@ -6,15 +6,9 @@ import revenue.domain.ids.*
 
 sealed trait RepoError extends Throwable
 object RepoError {
-  final case class NotFound(entity: String, id: String)
-      extends Exception(s"$entity not found: $id")
-      with RepoError
-  final case class Conflict(message: String)
-      extends Exception(message)
-      with RepoError
-  final case class Storage(message: String)
-      extends Exception(message)
-      with RepoError
+  final case class NotFound(entity: String, id: String) extends Exception(s"$entity not found: $id") with RepoError
+  final case class Conflict(message: String) extends Exception(message) with RepoError
+  final case class Storage(message: String) extends Exception(message) with RepoError
 }
 
 trait TaxpayerRepo {

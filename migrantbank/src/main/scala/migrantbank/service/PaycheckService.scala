@@ -25,8 +25,7 @@ object PaycheckService {
             employerName: String,
             correlationId: String
         ): IO[AppError, PaycheckEnrollment] =
-          if employerName.trim.isEmpty then
-            ZIO.fail(AppError.Validation("Employer name required"))
+          if employerName.trim.isEmpty then ZIO.fail(AppError.Validation("Employer name required"))
           else
             for {
               now <- Clock.instant

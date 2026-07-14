@@ -19,20 +19,15 @@ object ObjectionRoutes {
           body <- JsonSupport.decode[ObjectionCreate](req)
           svc <- ZIO.service[ObjectionService]
           out <- svc.create(body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
-      Method.GET / "api" / "v1" / "objections" / string("id") -> handler {
-        (id: String, req: Request) =>
-          (for {
-            p <- HttpAuth.principal(req)
-            svc <- ZIO.service[ObjectionService]
-            out <- svc.get(ObjectionId(id), p)
-          } yield JsonSupport.okJson(out)).catchAll(e =>
-            ZIO.succeed(JsonSupport.errorJson(e))
-          )
+      Method.GET / "api" / "v1" / "objections" / string("id") -> handler { (id: String, req: Request) =>
+        (for {
+          p <- HttpAuth.principal(req)
+          svc <- ZIO.service[ObjectionService]
+          out <- svc.get(ObjectionId(id), p)
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "objections" / string(
@@ -50,9 +45,7 @@ object ObjectionRoutes {
             .when(body.entityId != id)
           docs <- ZIO.service[DocumentService]
           out <- docs.upload(body, p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.POST / "api" / "v1" / "objections" / string(
@@ -63,9 +56,7 @@ object ObjectionRoutes {
           _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           svc <- ZIO.service[ObjectionService]
           out <- svc.withdraw(ObjectionId(id), p)
-        } yield JsonSupport.okJson(out)).catchAll(e =>
-          ZIO.succeed(JsonSupport.errorJson(e))
-        )
+        } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       }
     )
 }

@@ -7,9 +7,8 @@ import java.util.UUID
 
 /** Credit band derived from alternative data (tontine history + MoMo activity).
   *
-  * Thin → no formal history; micro-loan only Fair → some history; standard
-  * micro-loan Good → solid history; upgraded limits Strong → excellent track
-  * record; best rates
+  * Thin → no formal history; micro-loan only Fair → some history; standard micro-loan Good → solid history; upgraded
+  * limits Strong → excellent track record; best rates
   */
 enum CreditBand derives CanEqual, zio.json.JsonCodec {
   case Thin, Fair, Good, Strong
@@ -49,14 +48,13 @@ final case class CreditScore(
 /** Alternative credit scoring service.
   *
   * Uses:
-  *   1. **Tontine contribution history** — on-time rate from the njangi circle
-  *      (imported as a portable JSON credential via
-  *      `ScoreService.exportSignedCredential`).
-  *   2. **MoMo transaction history** — volume and frequency of mobile money
-  *      transactions (a proxy for economic activity).
+  *   1. **Tontine contribution history** — on-time rate from the njangi circle (imported as a portable JSON credential
+  *      via `ScoreService.exportSignedCredential`).
+  *   2. **MoMo transaction history** — volume and frequency of mobile money transactions (a proxy for economic
+  *      activity).
   *
-  * This is the service that replaces formal credit bureaus for the ~60 % of
-  * African adults who have no bank-reportable credit history.
+  * This is the service that replaces formal credit bureaus for the ~60 % of African adults who have no bank-reportable
+  * credit history.
   */
 trait CreditScoringService {
   def score(userId: UUID): IO[AppError, CreditScore]

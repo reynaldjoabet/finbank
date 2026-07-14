@@ -39,8 +39,7 @@ object LoanService {
             amount: Money,
             correlationId: String
         ): IO[AppError, Loan] =
-          if amount.amountMinor <= 0 then
-            ZIO.fail(AppError.Validation("Amount must be > 0"))
+          if amount.amountMinor <= 0 then ZIO.fail(AppError.Validation("Amount must be > 0"))
           else
             for {
               q <- quote(userId)

@@ -65,8 +65,7 @@ object BillingError {
     val msg: String = s"Conflict: $reason"
   }
 
-  final case class Integration(vendor: String, reason: String)
-      extends BillingError {
+  final case class Integration(vendor: String, reason: String) extends BillingError {
     val msg: String = s"Integration[$vendor]: $reason"
   }
 }
@@ -75,8 +74,7 @@ sealed trait BillingEvent derives JsonEncoder {
   def at: Instant
 }
 object BillingEvent {
-  final case class InvoiceIssued(invoiceId: String, at: Instant)
-      extends BillingEvent
+  final case class InvoiceIssued(invoiceId: String, at: Instant) extends BillingEvent
   final case class PaymentInitiated(
       paymentId: String,
       invoiceId: String,
@@ -87,8 +85,7 @@ object BillingEvent {
       invoiceId: String,
       at: Instant
   ) extends BillingEvent
-  final case class KybSubmitted(businessId: String, at: Instant)
-      extends BillingEvent
+  final case class KybSubmitted(businessId: String, at: Instant) extends BillingEvent
 }
 
 // =======================
@@ -105,8 +102,7 @@ object AppConfig {
   val live: ZLayer[Any, Nothing, AppConfig] =
     ZLayer.succeed(
       AppConfig(
-        webhookDestinations =
-          Chunk("https://example.com/webhook/billing-events"),
+        webhookDestinations = Chunk("https://example.com/webhook/billing-events"),
         vendorTimeout = 10.seconds,
         reconciliationInterval = 20.seconds
       )
@@ -173,8 +169,7 @@ object PaymentStore {
                 case None => m
               }
             }.unit,
-          listByStatus = (st: PaymentStatus) =>
-            ref.get.map(_.values.filter(_.status == st).toList)
+          listByStatus = (st: PaymentStatus) => ref.get.map(_.values.filter(_.status == st).toList)
         )
       }
     }
@@ -207,8 +202,8 @@ object BusinessStore {
 
 /** Best-practice idempotency:
   *   - Store key -> paymentId mapping so retries return the same paymentId.
-  *   - If vendor call fails, keep the mapping and mark payment failed. To retry
-  *     safely, clients should use a NEW idempotency key.
+  *   - If vendor call fails, keep the mapping and mark payment failed. To retry safely, clients should use a NEW
+  *     idempotency key.
   */
 final case class IdempotencyStore(
     get: String => UIO[Option[String]],
@@ -229,8 +224,7 @@ object IdempotencyStore {
 
 /** Event pipeline with fan-out:
   *   - Business logic calls Events.emit(event) (fast, non-blocking)
-  *   - A scoped publisher fiber moves events from an internal queue into a hub
-  *     (multi-subscriber stream)
+  *   - A scoped publisher fiber moves events from an internal queue into a hub (multi-subscriber stream)
   */
 final case class Events(
     emit: BillingEvent => UIO[Unit],
@@ -269,8 +263,7 @@ object PaymentProcessor {
   val stub: ZLayer[Any, Nothing, PaymentProcessor] =
     ZLayer.succeed {
       PaymentProcessor(
-        chargeAch = (inv: Invoice, idemKey: String) =>
-          ZIO.succeed(s"dwolla-ref-${inv.id}-${idemKey.take(10)}"),
+        chargeAch = (inv: Invoice, idemKey: String) => ZIO.succeed(s"dwolla-ref-${inv.id}-${idemKey.take(10)}"),
         settlementStatus = (_: String) => ZIO.succeed(PaymentStatus.Settled)
       )
     }
@@ -298,10 +291,8 @@ object Accounting {
   val stub: ZLayer[Any, Nothing, Accounting] =
     ZLayer.succeed {
       Accounting(
-        upsertInvoice = (inv: Invoice) =>
-          ZIO.logInfo(s"[ACCT] upsert invoice ${inv.id}").unit,
-        recordPayment =
-          (pay: Payment) => ZIO.logInfo(s"[ACCT] record payment ${pay.id}").unit
+        upsertInvoice = (inv: Invoice) => ZIO.logInfo(s"[ACCT] upsert invoice ${inv.id}").unit,
+        recordPayment = (pay: Payment) => ZIO.logInfo(s"[ACCT] record payment ${pay.id}").unit
       )
     }
 }
@@ -314,8 +305,7 @@ object Email {
   val stub: ZLayer[Any, Nothing, Email] =
     ZLayer.succeed {
       Email(
-        sendInvoiceIssued = (inv: Invoice) =>
-          ZIO.logInfo(s"[EMAIL] invoice issued ${inv.id}").unit
+        sendInvoiceIssued = (inv: Invoice) => ZIO.logInfo(s"[EMAIL] invoice issued ${inv.id}").unit
       )
     }
 }
@@ -328,8 +318,7 @@ object Webhooks {
   val stub: ZLayer[Any, Nothing, Webhooks] =
     ZLayer.succeed {
       Webhooks(
-        postEvent = (url: String, payload: String) =>
-          ZIO.logInfo(s"[WEBHOOK] POST $url payload=$payload").unit
+        postEvent = (url: String, payload: String) => ZIO.logInfo(s"[WEBHOOK] POST $url payload=$payload").unit
       )
     }
 }
@@ -352,8 +341,8 @@ object Billing {
     (Schedule.exponential(200.millis) && Schedule.recurs(5)).jittered
 
   val live: ZLayer[
-    InvoiceStore & PaymentStore & BusinessStore & IdempotencyStore &
-      PaymentProcessor & Kyb & Email & Events & AppConfig,
+    InvoiceStore & PaymentStore & BusinessStore & IdempotencyStore & PaymentProcessor & Kyb & Email & Events &
+      AppConfig,
     Nothing,
     Billing
   ] =
@@ -537,9 +526,7 @@ object Workers {
             ZIO
               .serviceWithZIO[Webhooks](_.postEvent(url, payload))
               .retry(retry5)
-              .catchAll(e =>
-                ZIO.logWarning(s"[WEBHOOK] failed for $url: ${e.getMessage}")
-              )
+              .catchAll(e => ZIO.logWarning(s"[WEBHOOK] failed for $url: ${e.getMessage}"))
           }
         } yield ()
       }
@@ -658,16 +645,15 @@ object HttpApi {
       //     } yield Response.json(s"""{"invoiceId":"$id"}""")).catchAll(ZIO.succeed(_))
       //   },
 
-      Method.GET / "api" / "invoices" / string("id") -> handler {
-        (id: String, req: Request) =>
-          (for {
-            _ <- requireAuth(req)
-            inv <- ZIO
-              .serviceWithZIO[Billing](_.getInvoice(id))
-              .mapError(toHttpError)
-          } yield Response.json(
-            s"""{"id":"${inv.id}","customerId":"${inv.customerId}","amount":${inv.money.amount},"currency":"${inv.money.currency}","status":"${inv.status}"}"""
-          )).catchAll(ZIO.succeed(_))
+      Method.GET / "api" / "invoices" / string("id") -> handler { (id: String, req: Request) =>
+        (for {
+          _ <- requireAuth(req)
+          inv <- ZIO
+            .serviceWithZIO[Billing](_.getInvoice(id))
+            .mapError(toHttpError)
+        } yield Response.json(
+          s"""{"id":"${inv.id}","customerId":"${inv.customerId}","amount":${inv.money.amount},"currency":"${inv.money.currency}","status":"${inv.status}"}"""
+        )).catchAll(ZIO.succeed(_))
       },
 
       //   Method.POST / "api" / "invoices" / string("id") / "payments" / "ach" -> handler { (id: String, req: Request) =>
@@ -679,15 +665,14 @@ object HttpApi {
       //     } yield Response.json(s"""{"paymentId":"$payId"}""")).catchAll(ZIO.succeed(_))
       //   },
 
-      Method.GET / "api" / "payments" / string("id") / "status" -> handler {
-        (id: String, req: Request) =>
-          (for {
-            _ <- requireAuth(req)
-            st <- ZIO
-              .serviceWithZIO[Billing](_.getPaymentStatus(id))
-              .mapError(toHttpError)
-          } yield Response.json(s"""{"paymentId":"$id","status":"$st"}"""))
-            .catchAll(ZIO.succeed(_))
+      Method.GET / "api" / "payments" / string("id") / "status" -> handler { (id: String, req: Request) =>
+        (for {
+          _ <- requireAuth(req)
+          st <- ZIO
+            .serviceWithZIO[Billing](_.getPaymentStatus(id))
+            .mapError(toHttpError)
+        } yield Response.json(s"""{"paymentId":"$id","status":"$st"}"""))
+          .catchAll(ZIO.succeed(_))
       }
     )
 }

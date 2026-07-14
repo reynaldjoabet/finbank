@@ -17,9 +17,8 @@ import java.util.NoSuchElementException
 import java.util.concurrent.{CompletableFuture, Executor}
 import scala.concurrent.duration.FiniteDuration
 
-/** An AsyncCacheLoader that buffers individual key requests until either
-  * `maxSize` keys are queued or `maxTime` has elapsed, then issues a single
-  * bulk lookup. Use when one round-trip for N keys is materially cheaper than N
+/** An AsyncCacheLoader that buffers individual key requests until either `maxSize` keys are queued or `maxTime` has
+  * elapsed, then issues a single bulk lookup. Use when one round-trip for N keys is materially cheaper than N
   * round-trips.
   */
 final class CoalescingBulkLoader[K, V] private (
@@ -47,9 +46,8 @@ final class CoalescingBulkLoader[K, V] private (
 object CoalescingBulkLoader {
 
   /** @param load
-    *   bulk loader. Keys absent from the returned Map fail their individual
-    *   `asyncLoad` with NoSuchElementException — Caffeine then propagates that
-    *   to the caller and does not cache.
+    *   bulk loader. Keys absent from the returned Map fail their individual `asyncLoad` with NoSuchElementException —
+    *   Caffeine then propagates that to the caller and does not cache.
     */
   def resource[K, V](
       maxSize: Int,

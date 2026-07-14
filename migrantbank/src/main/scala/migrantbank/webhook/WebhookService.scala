@@ -9,8 +9,7 @@ import java.util.UUID
 
 /** Typed domain events emitted by finbank services.
   *
-  * Each event carries enough context for a third-party webhook consumer to act
-  * without making additional API calls.
+  * Each event carries enough context for a third-party webhook consumer to act without making additional API calls.
   */
 enum DomainEvent derives CanEqual {
   case ContributionMade(
@@ -81,14 +80,12 @@ object SubscriptionId {
   given JsonDecoder[SubscriptionId] = JsonDecoder.uuid
 }
 
-/** A webhook subscription registered by a third-party (TPP or internal
-  * service).
+/** A webhook subscription registered by a third-party (TPP or internal service).
   *
   * @param eventTypes
   *   Which event types to deliver. Empty set = all events.
   * @param secret
-  *   HMAC-SHA256 signing secret for payload verification. Stored hashed; the
-  *   raw secret is shown only at creation time.
+  *   HMAC-SHA256 signing secret for payload verification. Stored hashed; the raw secret is shown only at creation time.
   */
 final case class WebhookSubscription(
     id: SubscriptionId,
@@ -120,9 +117,8 @@ final case class WebhookDelivery(
 
 /** Outbound webhook service.
   *
-  * Partners register endpoint URLs via `subscribe`. Every time `emit` is called
-  * (by a service that just completed a mutation), the webhook service fans out
-  * to all matching subscribers with exponential-backoff retries.
+  * Partners register endpoint URLs via `subscribe`. Every time `emit` is called (by a service that just completed a
+  * mutation), the webhook service fans out to all matching subscribers with exponential-backoff retries.
   *
   * Payload format:
   * {{{
@@ -135,8 +131,7 @@ final case class WebhookDelivery(
   *   {"eventType":"TransferSettled","transferId":"...", ...}
   * }}}
   *
-  * Signature verification: `HMAC-SHA256(secret, body)` — same as GitHub
-  * webhooks.
+  * Signature verification: `HMAC-SHA256(secret, body)` — same as GitHub webhooks.
   */
 trait WebhookService {
   def subscribe(

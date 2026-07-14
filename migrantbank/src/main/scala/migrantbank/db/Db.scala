@@ -47,9 +47,7 @@ object Db {
               .load()
               .migrate()
           }
-          .tapError(e =>
-            ZIO.logError(s"Flyway migration failed: ${e.getMessage}")
-          )
+          .tapError(e => ZIO.logError(s"Flyway migration failed: ${e.getMessage}"))
 
         // Create the Magnum Transactor
         xa = Transactor(ds)

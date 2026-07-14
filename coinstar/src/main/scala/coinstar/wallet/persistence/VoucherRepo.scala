@@ -28,8 +28,7 @@ object VoucherRepo {
   ): ZIO[VoucherRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[VoucherRepo](_.markRedeemed(code, userId, at))
 }
-final class VoucherRepoLive(quill: Quill.Postgres[SnakeCase])
-    extends VoucherRepo {
+final class VoucherRepoLive(quill: Quill.Postgres[SnakeCase]) extends VoucherRepo {
   import quill.*
 
   private inline def vouchers = quote(

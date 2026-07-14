@@ -91,8 +91,8 @@ object MoMoError {
 
 /** Single abstraction for all pan-African mobile money providers.
   *
-  * Each provider (`MtnMomoAdapter`, `OrangeMomoAdapter`, …) implements this
-  * trait. The `InteropRouter` dispatches based on `provider` field.
+  * Each provider (`MtnMomoAdapter`, `OrangeMomoAdapter`, …) implements this trait. The `InteropRouter` dispatches based
+  * on `provider` field.
   */
 trait MobileMoneyProvider {
   def provider: MoMoProvider
@@ -109,9 +109,8 @@ trait MobileMoneyProvider {
   def healthCheck: UIO[Boolean]
 }
 
-/** Routes a `MoMoTransferRequest` to the correct `MobileMoneyProvider` based on
-  * the `provider` field. This is the single entry-point for all pan-African
-  * mobile money payments inside `unity-pay`.
+/** Routes a `MoMoTransferRequest` to the correct `MobileMoneyProvider` based on the `provider` field. This is the
+  * single entry-point for all pan-African mobile money payments inside `unity-pay`.
   *
   * Usage:
   * {{{
@@ -158,14 +157,13 @@ object InteropRouter {
     Nothing,
     InteropRouter
   ] =
-    ZLayer.fromFunction {
-      (mtn: MtnMomoAdapter, orange: OrangeMomoAdapter, wave: WaveAdapter) =>
-        new InteropRouter(
-          Map(
-            MoMoProvider.MtnMomo -> (mtn: MobileMoneyProvider),
-            MoMoProvider.OrangeMoney -> (orange: MobileMoneyProvider),
-            MoMoProvider.Wave -> (wave: MobileMoneyProvider)
-          )
+    ZLayer.fromFunction { (mtn: MtnMomoAdapter, orange: OrangeMomoAdapter, wave: WaveAdapter) =>
+      new InteropRouter(
+        Map(
+          MoMoProvider.MtnMomo -> (mtn: MobileMoneyProvider),
+          MoMoProvider.OrangeMoney -> (orange: MobileMoneyProvider),
+          MoMoProvider.Wave -> (wave: MobileMoneyProvider)
         )
+      )
     }
 }

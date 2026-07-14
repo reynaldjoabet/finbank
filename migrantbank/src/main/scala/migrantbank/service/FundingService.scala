@@ -33,10 +33,8 @@ object FundingService {
             source: String,
             correlationId: String
         ): IO[AppError, Account] =
-          if amount.amountMinor <= 0 then
-            ZIO.fail(AppError.Validation("Amount must be > 0"))
-          else if source.trim.isEmpty then
-            ZIO.fail(AppError.Validation("Source required"))
+          if amount.amountMinor <= 0 then ZIO.fail(AppError.Validation("Amount must be > 0"))
+          else if source.trim.isEmpty then ZIO.fail(AppError.Validation("Source required"))
           else
             for {
               userAcc <- db
@@ -120,10 +118,8 @@ object FundingService {
             branchRef: String,
             correlationId: String
         ): IO[AppError, Account] =
-          if amount.amountMinor <= 0 then
-            ZIO.fail(AppError.Validation("Amount must be > 0"))
-          else if branchRef.trim.isEmpty then
-            ZIO.fail(AppError.Validation("Branch reference required"))
+          if amount.amountMinor <= 0 then ZIO.fail(AppError.Validation("Amount must be > 0"))
+          else if branchRef.trim.isEmpty then ZIO.fail(AppError.Validation("Branch reference required"))
           else
             for {
               userAcc <- db

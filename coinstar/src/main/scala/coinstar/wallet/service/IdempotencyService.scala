@@ -13,8 +13,7 @@ trait IdempotencyService {
     *
     *   - key uniqueness is per-user
     *   - requestHash must remain stable for a given key
-    *   - stores ONLY successful responses (you can extend this to store
-    *     failures too)
+    *   - stores ONLY successful responses (you can extend this to store failures too)
     */
   def run[R, A: JsonEncoder: JsonDecoder](
       userId: UserId,
@@ -32,8 +31,7 @@ object IdempotencyService {
     ZIO.serviceWithZIO[IdempotencyService](_.run(userId, key, requestHash)(fa))
 }
 
-final class IdempotencyServiceLive(repo: IdempotencyRepo)
-    extends IdempotencyService {
+final class IdempotencyServiceLive(repo: IdempotencyRepo) extends IdempotencyService {
 
   override def run[R, A: JsonEncoder: JsonDecoder](
       userId: UserId,

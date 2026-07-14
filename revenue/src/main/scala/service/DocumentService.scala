@@ -48,9 +48,7 @@ object DocumentService {
                 val decoded = Base64.getDecoder.decode(req.base64)
                 Chunk.fromArray(decoded)
               }
-              .mapError(_ =>
-                ApiError.BadRequest("Invalid base64 document payload")
-              )
+              .mapError(_ => ApiError.BadRequest("Invalid base64 document payload"))
 
             meta = DocumentMeta(
               id = id,

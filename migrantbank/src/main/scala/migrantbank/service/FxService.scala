@@ -5,9 +5,8 @@ import zio.*
 import java.time.Instant
 import java.util.UUID
 
-/** A locked FX rate with a short TTL. The sender sees this rate before
-  * confirming the transfer; the system honours it if confirmed within
-  * `ttlSeconds`.
+/** A locked FX rate with a short TTL. The sender sees this rate before confirming the transfer; the system honours it
+  * if confirmed within `ttlSeconds`.
   */
 final case class LockedRate(
     id: UUID,
@@ -24,10 +23,9 @@ final case class LockedRate(
   *
   * Workflow:
   *   1. Caller invokes `lockRate(from, to, idempotencyKey)`.
-  *   2. Service fetches a live mid-market rate (stub → replace with Yellow Card
-  *      / Flutterwave FX API) and persists a `LockedRate` for `ttlSeconds`.
-  *   3. Before a transfer is executed, `validate(id)` is called to ensure the
-  *      rate has not expired.
+  *   2. Service fetches a live mid-market rate (stub → replace with Yellow Card / Flutterwave FX API) and persists a
+  *      `LockedRate` for `ttlSeconds`.
+  *   3. Before a transfer is executed, `validate(id)` is called to ensure the rate has not expired.
   */
 trait FxService {
   def lockRate(
@@ -47,8 +45,8 @@ object FxService {
   /** Locked rates expire after this many seconds (default: 30 s). */
   private val TtlSeconds = 30L
 
-  /** Stub rate table (mid-market reference rates, not real). Production:
-    * replace with a live FX API call (Yellow Card, Flutterwave).
+  /** Stub rate table (mid-market reference rates, not real). Production: replace with a live FX API call (Yellow Card,
+    * Flutterwave).
     */
   private val StubRates: Map[(String, String), Double] = Map(
     ("MUR", "XAF") -> 14.5,

@@ -4,18 +4,15 @@ import zio.*
 import java.time.Instant
 import tontine.*
 
-/** Manages the full lifecycle of a missed-contribution dispute inside a Njangi
-  * / tontine circle:
+/** Manages the full lifecycle of a missed-contribution dispute inside a Njangi / tontine circle:
   *
-  *   1. **Raise** — any circle admin can open a dispute for a missed
-  *      contribution.
-  *   2. **Notify** — the member is notified (via MoMo or audit log) and given a
-  *      grace period.
+  *   1. **Raise** — any circle admin can open a dispute for a missed contribution.
+  *   2. **Notify** — the member is notified (via MoMo or audit log) and given a grace period.
   *   3. **Arbitrate** — if unresolved, escalate to circle arbitrators.
   *   4. **Resolve** — apply a `Penalty`, `Excuse`, or `Expel` the member.
   *
-  * Every state transition is appended to the `AuditRepo` so the full history
-  * feeds the member's portable tontine credit credential (see `ScoreService`).
+  * Every state transition is appended to the `AuditRepo` so the full history feeds the member's portable tontine credit
+  * credential (see `ScoreService`).
   */
 trait DisputeService {
   def raiseDispute(req: RaiseDisputeReq): IO[AppError, Dispute]

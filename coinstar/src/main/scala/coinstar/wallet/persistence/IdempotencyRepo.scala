@@ -22,8 +22,7 @@ object IdempotencyRepo {
   def put(row: IdempotencyRow): ZIO[IdempotencyRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[IdempotencyRepo](_.put(row))
 }
-final class IdempotencyRepoLive(quill: Quill.Postgres[SnakeCase])
-    extends IdempotencyRepo {
+final class IdempotencyRepoLive(quill: Quill.Postgres[SnakeCase]) extends IdempotencyRepo {
   import quill.*
 
   private inline def table = quote(

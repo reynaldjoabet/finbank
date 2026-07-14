@@ -21,8 +21,7 @@ final class RoutesV1(cfg: AppConfig) {
   private def headerValue(req: Request, name: String): Option[String] =
     // Headers is Iterable[Header]; Custom headers are represented as Header.Custom(customName, value)
     req.headers.collectFirst {
-      case Header.Custom(customName, value)
-          if customName.toString().equalsIgnoreCase(name) =>
+      case Header.Custom(customName, value) if customName.toString().equalsIgnoreCase(name) =>
         value.toString()
     }
 
@@ -57,17 +56,14 @@ final class RoutesV1(cfg: AppConfig) {
               dto <- decodeJson[DevTokenRequest](req)
               uid <- ZIO
                 .fromEither(UserId.fromString(dto.user_id))
-                .mapError(msg =>
-                  errorResponse(Status.BadRequest, "bad_request", msg)
-                )
+                .mapError(msg => errorResponse(Status.BadRequest, "bad_request", msg))
               tok <- AuthService.issueDevToken(uid)
             } yield jsonResponse(DevTokenResponse(tok), Status.Ok)
           )
         }
     )
 
-  private val protectedRoutes
-      : Routes[WalletService & IdempotencyService & AuthService, Response] =
+  private val protectedRoutes: Routes[WalletService & IdempotencyService & AuthService, Response] =
     Routes(
       Method.GET / "v1" / "wallets" ->
         handler { (_: Request) =>
@@ -110,30 +106,22 @@ final class RoutesV1(cfg: AppConfig) {
                 )
               )
 
-            body <- req.body.asString.mapError(_ =>
-              errorResponse(Status.BadRequest, "bad_request", "Invalid body")
-            )
+            body <- req.body.asString.mapError(_ => errorResponse(Status.BadRequest, "bad_request", "Invalid body"))
             dto <- ZIO.fromEither(
               body
                 .fromJson[CreateWalletRequest]
                 .left
-                .map(err =>
-                  errorResponse(Status.BadRequest, "bad_request", err)
-                )
+                .map(err => errorResponse(Status.BadRequest, "bad_request", err))
             )
             asset <- ZIO
               .fromEither(Asset.fromCode(dto.asset))
-              .mapError(msg =>
-                errorResponse(Status.BadRequest, "bad_request", msg)
-              )
+              .mapError(msg => errorResponse(Status.BadRequest, "bad_request", msg))
             reqHash = CryptoHash.sha256Hex(body)
             wallet <- IdempotencyService
               .run(principal.userId, idemKey, reqHash) {
                 WalletService.createWallet(principal.userId, asset)
               }
-              .mapError(e =>
-                errorResponse(Status.Conflict, "conflict", e.getMessage())
-              )
+              .mapError(e => errorResponse(Status.Conflict, "conflict", e.getMessage()))
           } yield {
             val out = WalletDto(
               id = wallet.id.value.toString,
@@ -203,16 +191,12 @@ final class RoutesV1(cfg: AppConfig) {
                 )
               )
 
-            body <- req.body.asString.mapError(_ =>
-              errorResponse(Status.BadRequest, "bad_request", "Invalid body")
-            )
+            body <- req.body.asString.mapError(_ => errorResponse(Status.BadRequest, "bad_request", "Invalid body"))
             dto <- ZIO.fromEither(
               body
                 .fromJson[RedeemVoucherRequest]
                 .left
-                .map(err =>
-                  errorResponse(Status.BadRequest, "bad_request", err)
-                )
+                .map(err => errorResponse(Status.BadRequest, "bad_request", err))
             )
             wid <- ZIO
               .attempt(UUID.fromString(dto.wallet_id))
@@ -253,8 +237,7 @@ final class RoutesV1(cfg: AppConfig) {
         } @@ AuthAspect.bearer
     )
 
-  val routes
-      : Routes[WalletService & IdempotencyService & AuthService, Response] =
+  val routes: Routes[WalletService & IdempotencyService & AuthService, Response] =
     publicRoutes ++ devRoutes ++ protectedRoutes
 }
 

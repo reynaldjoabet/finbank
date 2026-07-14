@@ -26,8 +26,7 @@ trait ContributionService {
 
 object ContributionService {
   val live: ZLayer[
-    CircleRepo & ContributionRepo & MobileMoneyGateway & OpenBankingClient &
-      AuditRepo,
+    CircleRepo & ContributionRepo & MobileMoneyGateway & OpenBankingClient & AuditRepo,
     Nothing,
     ContributionService
   ] =
@@ -123,9 +122,7 @@ object ContributionService {
             for {
               circle <- circleRepo.get(circleId).mapError(identity)
               all <- contribRepo.byCircle(circleId)
-              pending = all.filter(c =>
-                c.status == ContributionStatus.Paid && !c.bankReconciled
-              )
+              pending = all.filter(c => c.status == ContributionStatus.Paid && !c.bankReconciled)
               total = pending.map(_.amount.amount).sum
               _ <- ZIO
                 .fail(AppError.Validation("Nothing to sweep"))
@@ -144,12 +141,8 @@ object ContributionService {
               )
 
               // reconcile: in MVP we mark all pending as reconciled under the sweep txn
-              reconciled = pending.map(c =>
-                c.copy(bankReconciled = true, bankTxnId = Some(bankTxnId))
-              )
-              _ <- ZIO.foreachDiscard(reconciled)(c =>
-                contribRepo.update(c).mapError(identity)
-              )
+              reconciled = pending.map(c => c.copy(bankReconciled = true, bankTxnId = Some(bankTxnId)))
+              _ <- ZIO.foreachDiscard(reconciled)(c => contribRepo.update(c).mapError(identity))
             } yield reconciled.size
         }
     }

@@ -79,8 +79,7 @@ package object domain {
   }
   final case class Principal(userId: UserId)
 
-  enum DomainError(message: String) extends Throwable(message)
-      derives CanEqual {
+  enum DomainError(message: String) extends Throwable(message) derives CanEqual {
     case NotFound(message: String) extends DomainError(message)
     case Forbidden(message: String) extends DomainError(message)
     case Conflict(message: String) extends DomainError(message)

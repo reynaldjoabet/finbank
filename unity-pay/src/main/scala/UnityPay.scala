@@ -16,8 +16,7 @@ object UnityPay {
     def processCrossBorder(req: PaymentRequest): Task[String]
   }
 
-  case class UnityPayLive(backend: StreamBackend[Task, Any])
-      extends UnityPayService {
+  case class UnityPayLive(backend: StreamBackend[Task, Any]) extends UnityPayService {
 
     override def processCrossBorder(req: PaymentRequest): Task[String] = {
       for {

@@ -5,8 +5,7 @@ import zio.*
 
 /** Orange Money adapter (Cameroon, Côte d'Ivoire, Senegal, Mali, …).
   *
-  * Calls Orange Money Merchant API. Stub implementation — replace with real
-  * HTTP calls once API keys are provisioned.
+  * Calls Orange Money Merchant API. Stub implementation — replace with real HTTP calls once API keys are provisioned.
   */
 final class OrangeMomoAdapter extends MobileMoneyProvider {
 

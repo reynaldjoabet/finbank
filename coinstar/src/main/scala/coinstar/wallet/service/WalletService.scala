@@ -73,8 +73,7 @@ final class WalletServiceLive(
   override def readiness: IO[DomainError, Unit] =
     walletRepo.ping
 
-  /** Voucher redeem = atomic credit of a wallet + voucher status update +
-    * ledger tx recording.
+  /** Voucher redeem = atomic credit of a wallet + voucher status update + ledger tx recording.
     *
     * In production you likely want:
     *   - idempotency enforcement on the *API* for this endpoint

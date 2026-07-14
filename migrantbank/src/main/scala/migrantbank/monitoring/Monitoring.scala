@@ -10,8 +10,7 @@ trait Monitoring {
 object Monitoring {
 
   val live: ZLayer[
-    AppConfig & AlloyClient & VouchedClient & MbanqClient & SmsClient &
-      EmailClient,
+    AppConfig & AlloyClient & VouchedClient & MbanqClient & SmsClient & EmailClient,
     Nothing,
     Monitoring
   ] =

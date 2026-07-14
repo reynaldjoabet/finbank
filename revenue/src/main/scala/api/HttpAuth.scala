@@ -10,8 +10,8 @@ object HttpAuth {
 
   def bearer(req: Request): IO[ApiError, String] = {
     val tokenOpt =
-      req.header(Header.Authorization).collect {
-        case Header.Authorization.Bearer(token) => token.value.mkString
+      req.header(Header.Authorization).collect { case Header.Authorization.Bearer(token) =>
+        token.value.mkString
       }
 
     ZIO

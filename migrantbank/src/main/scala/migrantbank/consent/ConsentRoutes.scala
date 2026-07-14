@@ -10,10 +10,9 @@ import java.util.UUID
 
 /** HTTP routes for the Open Banking Consent API.
   *
-  * Endpoints: POST /v1/consents — TPP creates a consent grant POST
-  * /v1/consents/{id}/authorise — User authorises (bank-side redirect) DELETE
-  * /v1/consents/{id} — User revokes a consent GET /v1/consents — List consents
-  * for the authenticated user
+  * Endpoints: POST /v1/consents — TPP creates a consent grant POST /v1/consents/{id}/authorise — User authorises
+  * (bank-side redirect) DELETE /v1/consents/{id} — User revokes a consent GET /v1/consents — List consents for the
+  * authenticated user
   */
 object ConsentRoutes {
 

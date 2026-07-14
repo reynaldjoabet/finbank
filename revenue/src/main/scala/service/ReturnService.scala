@@ -63,8 +63,7 @@ object ReturnService {
   }
 
   val live: URLayer[
-    ReturnRepo & TaxpayerRepo & RiskRuleService & CaseRepo & AuditService &
-      Clock,
+    ReturnRepo & TaxpayerRepo & RiskRuleService & CaseRepo & AuditService & Clock,
     ReturnService
   ] =
     ZLayer.fromZIO {
@@ -200,8 +199,7 @@ object ReturnService {
                   id = cid,
                   caseType = rule.caseType,
                   taxpayerId = submitted.taxpayerId,
-                  reason =
-                    s"${rule.caseReason} (rule=${rule.name}, return=${submitted.id.value})",
+                  reason = s"${rule.caseReason} (rule=${rule.name}, return=${submitted.id.value})",
                   status = CaseStatus.Open,
                   assignedTo = None,
                   createdAtEpochMs = now,

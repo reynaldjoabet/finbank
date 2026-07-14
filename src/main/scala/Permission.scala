@@ -1,8 +1,5 @@
 import com.github.plokhotnyuk.jsoniter_scala.core._
-import com.github.plokhotnyuk.jsoniter_scala.macros.{
-  ConfiguredJsonValueCodec,
-  JsonCodecMaker
-}
+import com.github.plokhotnyuk.jsoniter_scala.macros.{ConfiguredJsonValueCodec, JsonCodecMaker}
 
 given JsonValueCodec[List[Permission]] = JsonCodecMaker.make
 
@@ -283,8 +280,7 @@ object Permission {
       resourceType = ResourceType.OTHER,
       action = Action.SUPER_ADMIN_ACTIONS,
       name = "Super Admin Actions",
-      description =
-        "Gives all the super admin permissions like HA, runtime configs, etc.",
+      description = "Gives all the super admin permissions like HA, runtime configs, etc.",
       permissionValidOnResource = false,
       prerequisitePermissions = Set.empty
     )

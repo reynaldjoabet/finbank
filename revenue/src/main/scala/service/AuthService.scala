@@ -135,8 +135,7 @@ object AuthService {
     } yield Principal(subject, roles, actingTaxpayerId)
   }
 
-  val live
-      : URLayer[UserRepo & RefreshTokenRepo & Clock & JwtConfig, AuthService] =
+  val live: URLayer[UserRepo & RefreshTokenRepo & Clock & JwtConfig, AuthService] =
     ZLayer.fromZIO {
       for {
         users <- ZIO.service[UserRepo]

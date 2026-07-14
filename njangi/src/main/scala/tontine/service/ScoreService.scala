@@ -29,9 +29,7 @@ object ScoreService {
             cs <- repo.byMember(memberId)
             // only verified contributions contribute to "bank-verifiable reputation"
             dueCount = cs.size
-            verifiedPaid = cs.filter(c =>
-              c.status == ContributionStatus.Paid && c.bankReconciled
-            )
+            verifiedPaid = cs.filter(c => c.status == ContributionStatus.Paid && c.bankReconciled)
             onTime = verifiedPaid.count { c =>
               c.paidAt.exists(pa =>
                 pa.atZone(ZoneOffset.UTC)

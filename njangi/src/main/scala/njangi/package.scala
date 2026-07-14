@@ -36,8 +36,7 @@ package object njangi {
 
   sealed trait SettlementCapability
 
-  enum SettlementRail(val latencyMillis: Long) extends SettlementCapability
-      derives CanEqual {
+  enum SettlementRail(val latencyMillis: Long) extends SettlementCapability derives CanEqual {
     case Gimac extends SettlementRail(2000)
     case Papss extends SettlementRail(5000)
     case StellarUsdc extends SettlementRail(500)

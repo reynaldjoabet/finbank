@@ -17,9 +17,7 @@ final case class StartRegistrationRequest(
     UserProfile(firstName, lastName, dateOfBirth, phone, address, ssn)
 }
 
-final case class StartRegistrationResponse(userId: UUID, kycStatus: KycStatus)
-    derives JsonEncoder,
-      JsonDecoder
+final case class StartRegistrationResponse(userId: UUID, kycStatus: KycStatus) derives JsonEncoder, JsonDecoder
 
 final case class ConfirmRegistrationRequest(
     userId: UUID,
@@ -28,15 +26,9 @@ final case class ConfirmRegistrationRequest(
 ) derives JsonEncoder,
       JsonDecoder
 
-final case class LoginRequest(phone: String, password: String)
-    derives JsonEncoder,
-      JsonDecoder
-final case class RefreshRequest(userId: UUID, refreshToken: String)
-    derives JsonEncoder,
-      JsonDecoder
-final case class LogoutRequest(userId: UUID, refreshToken: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class LoginRequest(phone: String, password: String) derives JsonEncoder, JsonDecoder
+final case class RefreshRequest(userId: UUID, refreshToken: String) derives JsonEncoder, JsonDecoder
+final case class LogoutRequest(userId: UUID, refreshToken: String) derives JsonEncoder, JsonDecoder
 
 final case class TopUpRequest(
     amountMinor: Long,
@@ -66,33 +58,19 @@ final case class AchTransferRequest(
 ) derives JsonEncoder,
       JsonDecoder
 
-final case class CreateFamilyGroupRequest(memberUserIds: Set[UUID])
-    derives JsonEncoder,
-      JsonDecoder
+final case class CreateFamilyGroupRequest(memberUserIds: Set[UUID]) derives JsonEncoder, JsonDecoder
 final case class FamilyDistributeRequest(
     groupId: UUID,
     payouts: Map[UUID, Money]
 ) derives JsonEncoder,
       JsonDecoder
 
-final case class EnrollPaycheckRequest(employerName: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class EnrollPaycheckRequest(employerName: String) derives JsonEncoder, JsonDecoder
 
-final case class LoanRequest(amountMinor: Long, currency: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class LoanRequest(amountMinor: Long, currency: String) derives JsonEncoder, JsonDecoder
 
-final case class CreateTicketRequest(message: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class CreateTicketRequest(message: String) derives JsonEncoder, JsonDecoder
 
-final case class AdminSetKycRequest(status: KycStatus)
-    derives JsonEncoder,
-      JsonDecoder
-final case class AdminUpdateDeliveryRequest(status: DeliveryStatus)
-    derives JsonEncoder,
-      JsonDecoder
-final case class AdminTransferStatusRequest(status: TransferStatus)
-    derives JsonEncoder,
-      JsonDecoder
+final case class AdminSetKycRequest(status: KycStatus) derives JsonEncoder, JsonDecoder
+final case class AdminUpdateDeliveryRequest(status: DeliveryStatus) derives JsonEncoder, JsonDecoder
+final case class AdminTransferStatusRequest(status: TransferStatus) derives JsonEncoder, JsonDecoder

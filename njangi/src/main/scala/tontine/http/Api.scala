@@ -146,8 +146,8 @@ object Api {
             svc <- ZIO.service[ContributionService]
             n <- svc
               .sweepAndReconcile(circleId, since = java.time.Instant.EPOCH)
-          } yield jsonResponse(Status.Ok, s"""{"reconciled":$n}""")).catchAll(
-            e => ZIO.succeed(handleError(AppError.Validation(e.getMessage)))
+          } yield jsonResponse(Status.Ok, s"""{"reconciled":$n}""")).catchAll(e =>
+            ZIO.succeed(handleError(AppError.Validation(e.getMessage)))
           )
         },
 

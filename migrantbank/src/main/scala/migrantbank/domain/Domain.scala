@@ -8,9 +8,7 @@ import java.util.UUID
 
 given CanEqual[UUID, UUID] = CanEqual.derived
 
-final case class Money(amountMinor: Long, currency: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class Money(amountMinor: Long, currency: String) derives JsonEncoder, JsonDecoder
 
 enum KycStatus derives JsonEncoder, JsonDecoder, DbCodec, CanEqual {
   case PENDING, VERIFIED, REJECTED, MANUAL_REVIEW_REQUIRED
@@ -138,8 +136,6 @@ final case class AuditEvent(
 ) derives JsonEncoder,
       JsonDecoder
 
-final case class AuthTokens(accessToken: String, refreshToken: String)
-    derives JsonEncoder,
-      JsonDecoder
+final case class AuthTokens(accessToken: String, refreshToken: String) derives JsonEncoder, JsonDecoder
 
 final case class AuthContext(userId: UUID, role: String)

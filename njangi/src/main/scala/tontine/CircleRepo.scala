@@ -6,8 +6,7 @@ trait CircleRepo {
   def update(circle: Circle): IO[AppError.NotFound, Unit]
 }
 
-final case class CircleRepoLive(ref: Ref[Map[CircleId, Circle]])
-    extends CircleRepo {
+final case class CircleRepoLive(ref: Ref[Map[CircleId, Circle]]) extends CircleRepo {
   def create(circle: Circle): UIO[Unit] =
     ref.update(_ + (circle.id -> circle))
 

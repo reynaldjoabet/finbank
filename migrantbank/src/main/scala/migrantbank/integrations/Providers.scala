@@ -33,12 +33,7 @@ trait EmailClient {
 }
 object DummyProviders {
 
-  private class DummyImpl
-      extends AlloyClient
-      with VouchedClient
-      with MbanqClient
-      with SmsClient
-      with EmailClient {
+  private class DummyImpl extends AlloyClient with VouchedClient with MbanqClient with SmsClient with EmailClient {
 
     override def runKyc(
         profile: UserProfile

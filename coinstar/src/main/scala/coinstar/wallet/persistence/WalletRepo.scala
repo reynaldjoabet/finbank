@@ -1,13 +1,6 @@
 package coinstar.wallet.persistence
 
-import coinstar.wallet.domain.{
-  Asset,
-  DomainError,
-  UserId,
-  Wallet,
-  WalletId,
-  given
-}
+import coinstar.wallet.domain.{Asset, DomainError, UserId, Wallet, WalletId, given}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
@@ -62,8 +55,7 @@ object WalletRepo {
   def ping: ZIO[WalletRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[WalletRepo](_.ping)
 }
-final class WalletRepoLive(quill: Quill.Postgres[SnakeCase])
-    extends WalletRepo {
+final class WalletRepoLive(quill: Quill.Postgres[SnakeCase]) extends WalletRepo {
   import quill.*
 
   private inline def wallets = quote(querySchema[WalletRow]("wallets"))
@@ -98,9 +90,7 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase])
       walletId: WalletId
   ): IO[DomainError, Wallet] =
     run(
-      wallets.filter(w =>
-        w.id == lift(walletId.value) && w.userId == lift(userId.value)
-      )
+      wallets.filter(w => w.id == lift(walletId.value) && w.userId == lift(userId.value))
     ).map(_.headOption)
       .mapError(e => DomainError.External(s"DB error: ${e.getMessage}"))
       .flatMap {
@@ -113,9 +103,7 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase])
       asset: Asset
   ): IO[DomainError, Option[Wallet]] =
     run(
-      wallets.filter(w =>
-        w.userId == lift(userId.value) && w.asset == lift(asset.code)
-      )
+      wallets.filter(w => w.userId == lift(userId.value) && w.asset == lift(asset.code))
     ).map(_.headOption)
       .mapError(e => DomainError.External(s"DB error: ${e.getMessage}"))
       .flatMap(ZIO.foreach(_)(toDomain))
@@ -157,9 +145,7 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase])
   ): IO[DomainError, Unit] =
     run(
       wallets
-        .filter(w =>
-          w.id == lift(walletId.value) && w.version == lift(expectedVersion)
-        )
+        .filter(w => w.id == lift(walletId.value) && w.version == lift(expectedVersion))
         .update(
           _.balanceMinor -> lift(newBalanceMinor),
           _.version -> (lift(expectedVersion) + 1L)

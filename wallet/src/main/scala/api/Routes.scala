@@ -69,89 +69,86 @@ object HttpRoutes {
             }
         },
 
-        Method.GET / "invoices" / string("id") -> handler {
-          (idStr: String, _: Request) =>
-            val io =
-              for {
-                id <- ZIO
-                  .attempt(java.util.UUID.fromString(idStr))
-                  .map(InvoiceId.fromUUID)
-                  .mapError(_ => AppError.Validation("Invalid invoice id"))
-                // Again, merchantId should come from auth context
-                inv <- svc match {
-                  case s: PaymentService =>
-                    // no direct get in service; you'd add it or go via repo. Kept short here.
-                    ZIO.fail(
-                      AppError.Validation(
-                        "Add a getInvoice endpoint in the service for production"
-                      )
-                    )
-                }
-              } yield inv
-
-            io.foldZIO(
-              e => ZIO.succeed(jsonError(e.getMessage, Status.BadRequest)),
-              _ => ZIO.succeed(Response.text("not implemented"))
-            )
-        },
-
-        Method.POST / "invoices" / string("id") / "pay" -> handler {
-          (idStr: String, req: Request) =>
-            (for {
-              body <- req.body.asString
-              in <- ZIO
-                .fromEither(body.fromJson[PayInvoiceRequest])
-                .mapError(AppError.Validation.apply)
-              invoiceId <- ZIO
+        Method.GET / "invoices" / string("id") -> handler { (idStr: String, _: Request) =>
+          val io =
+            for {
+              id <- ZIO
                 .attempt(java.util.UUID.fromString(idStr))
                 .map(InvoiceId.fromUUID)
                 .mapError(_ => AppError.Validation("Invalid invoice id"))
-              merchantId = MerchantId.random
-              intent <- svc.requestPayment(
-                merchantId,
-                invoiceId,
-                in.provider,
-                in.idempotencyKey,
-                in.callbackUrl
-              )
-            } yield Response.json(PayInvoiceResponse(intent).toJson))
-              .catchAll {
-                case e: AppError.Validation =>
-                  ZIO.succeed(jsonError(e.getMessage, Status.BadRequest))
-                case e: AppError.Conflict =>
-                  ZIO.succeed(jsonError(e.getMessage, Status.Conflict))
-                case e =>
-                  ZIO.succeed(
-                    jsonError(e.getMessage, Status.InternalServerError)
+              // Again, merchantId should come from auth context
+              inv <- svc match {
+                case s: PaymentService =>
+                  // no direct get in service; you'd add it or go via repo. Kept short here.
+                  ZIO.fail(
+                    AppError.Validation(
+                      "Add a getInvoice endpoint in the service for production"
+                    )
                   )
               }
+            } yield inv
+
+          io.foldZIO(
+            e => ZIO.succeed(jsonError(e.getMessage, Status.BadRequest)),
+            _ => ZIO.succeed(Response.text("not implemented"))
+          )
         },
 
-        Method.POST / "webhooks" / string("provider") -> handler {
-          (providerStr: String, req: Request) =>
-            val headers = req.headers.toList
-              .map(h => h.headerName.toString -> h.renderedValue)
-              .toMap
-            (for {
-              raw <- req.body.asString.orElseSucceed("")
-              provider <- ZIO
-                .fromEither(providerStr.fromJson[Provider])
-                .orElseSucceed {
-                  providerStr.toLowerCase match {
-                    case "mtnmomo"     => Provider.MtnMomo
-                    case "orangemoney" => Provider.OrangeMoney
-                    case "mpesa"       => Provider.MPesa
-                    case "airtelmoney" => Provider.AirtelMoney
-                    case _             => Provider.Sandbox
-                  }
-                }
-              _ <- svc.handleWebhook(provider, headers, raw)
-            } yield Response.status(Status.Ok)).catchAll {
+        Method.POST / "invoices" / string("id") / "pay" -> handler { (idStr: String, req: Request) =>
+          (for {
+            body <- req.body.asString
+            in <- ZIO
+              .fromEither(body.fromJson[PayInvoiceRequest])
+              .mapError(AppError.Validation.apply)
+            invoiceId <- ZIO
+              .attempt(java.util.UUID.fromString(idStr))
+              .map(InvoiceId.fromUUID)
+              .mapError(_ => AppError.Validation("Invalid invoice id"))
+            merchantId = MerchantId.random
+            intent <- svc.requestPayment(
+              merchantId,
+              invoiceId,
+              in.provider,
+              in.idempotencyKey,
+              in.callbackUrl
+            )
+          } yield Response.json(PayInvoiceResponse(intent).toJson))
+            .catchAll {
               case e: AppError.Validation =>
                 ZIO.succeed(jsonError(e.getMessage, Status.BadRequest))
+              case e: AppError.Conflict =>
+                ZIO.succeed(jsonError(e.getMessage, Status.Conflict))
               case e =>
-                ZIO.succeed(jsonError(e.getMessage, Status.InternalServerError))
+                ZIO.succeed(
+                  jsonError(e.getMessage, Status.InternalServerError)
+                )
             }
+        },
+
+        Method.POST / "webhooks" / string("provider") -> handler { (providerStr: String, req: Request) =>
+          val headers = req.headers.toList
+            .map(h => h.headerName.toString -> h.renderedValue)
+            .toMap
+          (for {
+            raw <- req.body.asString.orElseSucceed("")
+            provider <- ZIO
+              .fromEither(providerStr.fromJson[Provider])
+              .orElseSucceed {
+                providerStr.toLowerCase match {
+                  case "mtnmomo"     => Provider.MtnMomo
+                  case "orangemoney" => Provider.OrangeMoney
+                  case "mpesa"       => Provider.MPesa
+                  case "airtelmoney" => Provider.AirtelMoney
+                  case _             => Provider.Sandbox
+                }
+              }
+            _ <- svc.handleWebhook(provider, headers, raw)
+          } yield Response.status(Status.Ok)).catchAll {
+            case e: AppError.Validation =>
+              ZIO.succeed(jsonError(e.getMessage, Status.BadRequest))
+            case e =>
+              ZIO.succeed(jsonError(e.getMessage, Status.InternalServerError))
+          }
         }
       )
     }

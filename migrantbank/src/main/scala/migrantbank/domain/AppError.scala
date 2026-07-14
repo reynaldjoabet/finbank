@@ -12,8 +12,7 @@ object AppError {
   final case class Conflict(message: String) extends AppError
   final case class ProviderUnavailable(message: String) extends AppError
   final case class RateLimited(message: String) extends AppError
-  final case class Internal(message: String, cause: Option[Throwable] = None)
-      extends AppError {
+  final case class Internal(message: String, cause: Option[Throwable] = None) extends AppError {
     override def getCause(): Throwable | Null = cause.orNull
   }
 

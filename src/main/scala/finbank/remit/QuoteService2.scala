@@ -75,8 +75,7 @@ object QuoteService2 {
       deliveredAmountXAF: BigDecimal,
       totalLossPercent: BigDecimal
   ) derives Codec.AsObject
-  case class SendRequest(amountMUR: BigDecimal, chosenRoute: String)
-      derives Codec.AsObject
+  case class SendRequest(amountMUR: BigDecimal, chosenRoute: String) derives Codec.AsObject
   case class SendResult(
       success: Boolean,
       deliveredXAF: BigDecimal,
