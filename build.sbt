@@ -175,21 +175,38 @@ lazy val `payment-initiation-codegen` =
       openApiValidateSpec := SettingDisabled,
       // Fail fast on bad specs (optional but recommended)
       openApiValidateSpec := Some(true),
-      // Compile / sourceGenerators += openApiGenerate.taskValue,
-      (Compile / compile) := (Compile / compile).dependsOn(generate).value,
-      // (Compile/compile) := ((compile in Compile) dependsOn openApiGenerate).value
 
-      // Define the simple generate command to generate full client codes
-      generate := {
+      // Wired in as a sourceGenerator, NOT as `compile.dependsOn(generate)`.
+      // sbt collects `sources` by globbing src/main/scala in a task separate from
+      // `compile`, and dependsOn only sequences generate ahead of `compile` -- not
+      // ahead of that glob. So on a clean checkout the glob ran first, found
+      // nothing, and codegen compiled 0 sources. A sourceGenerator feeds `sources`
+      // directly, so sbt has to run it before compiling.
+      Compile / sourceGenerators += Def.task {
+        generate.value
+        (file(openApiOutputDir.value) ** "*.scala").get()
+      }.taskValue,
+      // Generated output lands directly in src/main/scala (see openApiOutputDir
+      // above), so drop the unmanaged source dir -- otherwise the same files get
+      // compiled twice, once via the sourceGenerator and once via the default glob.
+      Compile / unmanagedSourceDirectories := Seq.empty,
+
+      // Manual entry point to (re)generate the client without a full compile.
+      //
+      // Must stay uncached. sbt 2 caches `:=` task results by default, but the
+      // cache key is built from the task's `.value` inputs, and nothing here
+      // hashes the OpenAPI spec's *contents* -- sbt's own file-input keys
+      // (allInputFiles / changedInputFiles) are @transient, i.e. deliberately
+      // excluded from cache input. A Def.cachedTask would therefore keep serving
+      // a stale client whenever the spec changed, so we always regenerate.
+      generate := Def.uncached {
         val _ = openApiGenerate.value
-        val log = streams.value.log
 
         // Delete the generated build.sbt file so that it is not used for our sbt config
         val buildSbtFile = file(openApiOutputDir.value) / "build.sbt"
         if (buildSbtFile.exists()) {
           buildSbtFile.delete()
         }
-
       },
       libraryDependencies ++= Seq(
         sttpJsoniter,
@@ -217,10 +234,13 @@ lazy val `account-information-codegen` =
       openApiGenerateApiTests := SettingDisabled,
       openApiValidateSpec := SettingDisabled,
       openApiValidateSpec := Some(true),
-      (Compile / compile) := (Compile / compile).dependsOn(generate).value,
-      generate := {
+      Compile / sourceGenerators += Def.task {
+        generate.value
+        (file(openApiOutputDir.value) ** "*.scala").get()
+      }.taskValue,
+      Compile / unmanagedSourceDirectories := Seq.empty,
+      generate := Def.uncached {
         val _ = openApiGenerate.value
-        val log = streams.value.log
 
         val buildSbtFile = file(openApiOutputDir.value) / "build.sbt"
         if (buildSbtFile.exists()) {
