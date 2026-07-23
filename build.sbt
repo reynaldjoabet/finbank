@@ -7,21 +7,8 @@ ThisBuild / dependencyOverrides ++= Seq(
   zioJson
 )
 
-// Editing build.sbt now prompts a reload instead of silently leaving the
-// session on a stale build definition.
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
-// Applied per-project via `commonSettings` rather than through `ThisBuild`.
-// In sbt 2 a `ThisBuild / scalacOptions ++=` is re-applied once per project
-// during delegation, so the flags accumulate -- this build was passing every
-// flag 10x to each subproject and 80x to root, which is what produced the
-// "Flag -no-indent set repeatedly" / "63 warnings found" noise on every compile.
-//
-// `-no-indent` is deliberately NOT paired with `-rewrite`: with `-rewrite` the
-// compiler edits the source files in place as a side effect of compiling, which
-// makes the build non-hermetic (CI mutates its own checkout, and a developer's
-// files change under the editor). Without it, brace-less syntax is a compile
-// error instead, which enforces the same house style without touching sources.
 lazy val commonScalacOptions = Seq(
   "-no-indent",
   "-deprecation", // Warns about deprecated APIs
@@ -36,24 +23,13 @@ lazy val commonScalacOptions = Seq(
   //   "-Wvalue-discard",
   "-language:strictEquality",
   "-Xmax-inlines:100",
-  // CI builds on both Java 17 and 21. Without this, code compiled on 21 can
-  // reference 21-only JDK APIs and still emit bytecode that loads on 17, then
-  // fail with NoSuchMethodError at runtime. `-release` checks against the 17
-  // API signatures so that mismatch is a compile error on every JDK.
   "-release:17"
 )
 
-// No `testFrameworks +=` here: sbt 2's default already lists ZTestFramework
-// (alongside munit, JUnit, weaver and hedgehog), so the per-project
-// `testFrameworks += ZTestFramework` this build used to carry was a no-op that
-// just registered the framework twice.
 lazy val commonSettings = Seq(
   scalacOptions := commonScalacOptions
 )
 
-// Declared before the projects that reference them. These are strict `val`s, so
-// a project forced before its initialiser runs would read `null`; keeping them
-// above every use site removes that ordering hazard.
 val commonDependencies = Seq(
   sttpCore,
   sttpJsoniter,
@@ -112,13 +88,7 @@ lazy val codegenSettings = Seq(
   openApiGenerateMetadata := SettingDisabled,
   // Use the same JSON so CLI and SBT stay in sync
   openApiConfigFile := ((Compile / baseDirectory).value / "config.json").getPath,
-  // One .openapi-generator-ignore shared by both modules, at the modules/ root
-  // (one level above each module's own directory). The generator matches its
-  // patterns relative to the ignore file's own directory
-  // (CodegenIgnoreProcessor.allowsFile relativizes each output file against the
-  // ignore file's parent), so `*/src/main/scala/...` patterns reach into each
-  // modules/<name> by name. This keeps the generator's sbt scaffold (build.sbt,
-  // project/, .scalafmt.conf) and README out of the source tree.
+
   openApiIgnoreFileOverride := ((ThisBuild / baseDirectory).value / "modules" / ".openapi-generator-ignore").getPath,
   // Put generated sources where SBT expects managed sources
   openApiOutputDir := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
@@ -179,10 +149,6 @@ def codegenModule(id: String): Project =
     .settings(codegenSettings)
     .settings(name := id)
 
-// Each module is bound to its own top-level val: sbt discovers projects by
-// reflecting over `val`s of type Project, and a project referenced only from
-// inside a Seq is invisible to that scan (its LocalProject id would fail to
-// resolve). The `codegenModules` list is just a convenience aggregate of these.
 lazy val paymentInitiationCodegen = codegenModule("payment-initiation-codegen")
 lazy val accountInformationCodegen = codegenModule("account-information-codegen")
 
