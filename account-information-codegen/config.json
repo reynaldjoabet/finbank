@@ -9,7 +9,7 @@
     "globalProperties": {
         "apis": "",
         "models": "",
-        "supportingFiles": ""
+        "supportingFiles": "JsonSupport.scala,Helpers.scala,AdditionalTypeSerializers.scala"
     },
     "modelPropertyNaming": "camelCase",
     "ensureUniqueParams": "true",

@@ -278,5 +278,9 @@ object Dependencies {
     "org.typelevel" %% "munit-cats-effect" % Version.munitCatsEffect % Test
 
   // Tasks
-  lazy val generate = taskKey[Unit]("generate code from APIs")
+  //
+  // Typed Seq[File] (not Unit) so it returns the exact list of files the
+  // generator wrote, which is fed straight to `Compile / sourceGenerators`
+  // without re-globbing the output directory.
+  lazy val generate = taskKey[Seq[File]]("generate code from APIs")
 }

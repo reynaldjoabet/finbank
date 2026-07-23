@@ -1,6 +1,6 @@
 {
     "generatorName": "scala-sttp4-jsoniter",
-    "inputSpec": "payment-initiation-codegen/src/main/resources/payment-initiation.yaml",
+    "inputSpec": "payment-initiation-codegen/payment-initiation.yaml",
     "outputDir": "payment-initiation-codegen/src/main/scala",
     "mainPackage": "",
     "apiPackage": "payment.initiation.api",
@@ -9,7 +9,7 @@
     "globalProperties": {
         "apis": "",
         "models": "",
-        "supportingFiles": ""
+        "supportingFiles": "JsonSupport.scala,Helpers.scala,AdditionalTypeSerializers.scala"
     },
     "modelPropertyNaming": "camelCase",
     "ensureUniqueParams": "true",

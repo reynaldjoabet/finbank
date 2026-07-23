@@ -1,0 +1,1523 @@
+openapi: 3.1.0
+info:
+  title: UOFS Payment Initiation API
+  description: |
+    Uganda Open Finance Standard — Payment Initiation API (Phase 2).
+
+    Enables authorised Payment Initiation Service Providers (PISPs) to create
+    and manage payments from a PSU's account at an FSP. Covers domestic bank
+    transfers, mobile money transfers (same-MNO and cross-MNO), bill payments,
+    merchant payments, bulk disbursements, and scheduled payments.
+
+    Every payment follows a consent-then-execute pattern: the PISP creates a
+    payment consent, the PSU authorises it (via OAuth redirect, USSD, or
+    decoupled flow), and then the PISP submits the payment for execution.
+  version: 1.0.0
+  contact:
+    name: UOFS Working Group
+    url: https://uofs.ug
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: https://{fsp-domain}/uofs/v1/payment-initiation
+    description: FSP production server (domain registered in Participant Directory)
+    variables:
+      fsp-domain:
+        default: api.example.co.ug
+        description: FSP's registered API domain
+  - url: https://sandbox.uofs.ug/v1/payment-initiation
+    description: UOFS sandbox environment
+
+security:
+  - BearerAuth: []
+  - mTLS: []
+
+tags:
+  - name: Payment Consents
+    description: Create, retrieve, and cancel payment consents
+  - name: Payments
+    description: Submit and track payments
+  - name: Bill Payments
+    description: Biller registry and bill-specific payment operations
+  - name: Bulk Payments
+    description: Bulk disbursement operations
+  - name: Scheduled Payments
+    description: Future-dated and recurring payment management
+  - name: Confirmation of Funds
+    description: Verify sufficient balance before payment (optional)
+
+paths:
+  # --- Payment Consents ---
+  /payment-consents:
+    post:
+      operationId: createPaymentConsent
+      summary: Create a payment consent
+      description: |
+        Creates a new payment consent that the PSU must authorise before the
+        payment can be executed. The FSP returns fee disclosure in the response.
+      tags: [Payment Consents]
+      parameters:
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentConsentRequest'
+      responses:
+        '201':
+          description: Payment consent created successfully
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConsentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /payment-consents/{consentId}:
+    get:
+      operationId: getPaymentConsent
+      summary: Get payment consent status
+      description: Returns the current state of a payment consent.
+      tags: [Payment Consents]
+      parameters:
+        - $ref: '#/components/parameters/PaymentConsentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+      responses:
+        '200':
+          description: Payment consent retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentConsentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      operationId: cancelPaymentConsent
+      summary: Cancel a payment consent
+      description: |
+        Cancels a payment consent that has not yet been executed. Only valid
+        when the consent status is PENDING or AUTHORISED.
+      tags: [Payment Consents]
+      parameters:
+        - $ref: '#/components/parameters/PaymentConsentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+      responses:
+        '204':
+          description: Payment consent cancelled successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Consent cannot be cancelled (already executed or in terminal state)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # --- Payments ---
+  /payments:
+    post:
+      operationId: createPayment
+      summary: Submit a payment for execution
+      description: |
+        Submits an authorised payment consent for execution. The referenced
+        consent MUST have status AUTHORISED. Payment details are drawn from
+        the consent — they are not repeated in the request body.
+      tags: [Payments]
+      parameters:
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ConsentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentExecutionRequest'
+      responses:
+        '201':
+          description: Payment accepted for processing
+          headers:
+            x-fapi-interaction-id:
+              $ref: '#/components/headers/FAPIInteractionId'
+            x-uofs-api-version:
+              $ref: '#/components/headers/APIVersion'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          description: Consent not in AUTHORISED state, or duplicate submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Consent has expired before payment submission
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /payments/{paymentId}:
+    get:
+      operationId: getPayment
+      summary: Get payment status
+      description: Returns the current state of a submitted payment.
+      tags: [Payments]
+      parameters:
+        - $ref: '#/components/parameters/PaymentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+      responses:
+        '200':
+          description: Payment status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # --- Bill Payments ---
+  /billers:
+    get:
+      operationId: getBillers
+      summary: List registered billers
+      description: |
+        Returns the biller registry. This is a public endpoint that does not
+        require a consent — biller information is not personal data.
+      tags: [Bill Payments]
+      security: []
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/BillerCategory'
+          description: Filter by biller category
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search biller name or code
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Billers retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillerListResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /billers/{billerId}:
+    get:
+      operationId: getBiller
+      summary: Get biller details
+      description: Returns details of a specific registered biller.
+      tags: [Bill Payments]
+      security: []
+      parameters:
+        - name: billerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Biller details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillerDetailResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # --- Bulk Payments ---
+  /bulk-payment-consents:
+    post:
+      operationId: createBulkPaymentConsent
+      summary: Create a bulk payment consent
+      description: |
+        Creates a consent for a bulk disbursement containing multiple payments
+        from a single debtor account. Maximum 1,000 payments per batch.
+      tags: [Bulk Payments]
+      parameters:
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkPaymentConsentRequest'
+      responses:
+        '201':
+          description: Bulk payment consent created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkPaymentConsentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /bulk-payments:
+    post:
+      operationId: createBulkPayment
+      summary: Submit a bulk payment for execution
+      description: Submits an authorised bulk payment consent for execution.
+      tags: [Bulk Payments]
+      parameters:
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/ConsentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkPaymentExecutionRequest'
+      responses:
+        '201':
+          description: Bulk payment accepted for processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkPaymentResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Consent not in AUTHORISED state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /bulk-payments/{bulkPaymentId}:
+    get:
+      operationId: getBulkPayment
+      summary: Get bulk payment status
+      description: Returns aggregate status of the bulk payment.
+      tags: [Bulk Payments]
+      parameters:
+        - $ref: '#/components/parameters/BulkPaymentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+      responses:
+        '200':
+          description: Bulk payment status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkPaymentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /bulk-payments/{bulkPaymentId}/payments:
+    get:
+      operationId: getBulkPaymentItems
+      summary: Get individual payment statuses within a bulk payment
+      description: Returns per-payment statuses within the bulk. Supports pagination.
+      tags: [Bulk Payments]
+      parameters:
+        - $ref: '#/components/parameters/BulkPaymentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PaymentStatus'
+          description: Filter by payment status
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Individual payment statuses retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkPaymentItemListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # --- Scheduled Payments ---
+  /scheduled-payments:
+    get:
+      operationId: getScheduledPayments
+      summary: List active scheduled payments
+      description: Returns all active scheduled payments under the consent.
+      tags: [Scheduled Payments]
+      parameters:
+        - $ref: '#/components/parameters/ConsentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/Cursor'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Scheduled payments retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledPaymentListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /scheduled-payments/{scheduledPaymentId}:
+    get:
+      operationId: getScheduledPayment
+      summary: Get scheduled payment details
+      description: Returns details of a specific scheduled payment.
+      tags: [Scheduled Payments]
+      parameters:
+        - $ref: '#/components/parameters/ScheduledPaymentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+      responses:
+        '200':
+          description: Scheduled payment details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduledPaymentResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      operationId: cancelScheduledPayment
+      summary: Cancel a scheduled payment
+      description: Cancels a scheduled payment before its execution date.
+      tags: [Scheduled Payments]
+      parameters:
+        - $ref: '#/components/parameters/ScheduledPaymentId'
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+      responses:
+        '204':
+          description: Scheduled payment cancelled successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Payment has already been executed or is in processing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  # --- Confirmation of Funds ---
+  /confirmation-of-funds:
+    post:
+      operationId: confirmFunds
+      summary: Check if sufficient funds are available
+      description: |
+        Verifies whether the debtor has sufficient funds for the specified
+        amount (including estimated fees). Does NOT disclose the actual balance.
+        This endpoint is OPTIONAL for FSPs.
+      tags: [Confirmation of Funds]
+      parameters:
+        - $ref: '#/components/parameters/FAPIInteractionId'
+        - $ref: '#/components/parameters/ConsentId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmationOfFundsRequest'
+      responses:
+        '200':
+          description: Funds availability checked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfirmationOfFundsResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: OAuth 2.0 access token (sender-constrained for Full Profile)
+    mTLS:
+      type: mutualTLS
+      description: Mutual TLS client certificate authentication (Full Profile)
+
+  parameters:
+    PaymentConsentId:
+      name: consentId
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^ug-uofs-pay(-bulk)?-\d{4}-\d{2}-\d{2}-[a-z0-9]+$'
+      description: Payment consent identifier
+
+    PaymentId:
+      name: paymentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Payment identifier returned after submission
+
+    BulkPaymentId:
+      name: bulkPaymentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Bulk payment identifier
+
+    ScheduledPaymentId:
+      name: scheduledPaymentId
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Scheduled payment identifier
+
+    ConsentId:
+      name: x-uofs-consent-id
+      in: header
+      required: true
+      schema:
+        type: string
+      description: Consent artefact ID authorising this request
+
+    FAPIInteractionId:
+      name: x-fapi-interaction-id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Unique interaction identifier (UUID)
+
+    IdempotencyKey:
+      name: x-idempotency-key
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: |
+        UUID v4 generated by the PISP. The FSP MUST store keys for at least
+        24 hours and return the original response for duplicate requests.
+
+    Cursor:
+      name: cursor
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Opaque pagination cursor
+
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 25
+
+  headers:
+    FAPIInteractionId:
+      schema:
+        type: string
+        format: uuid
+
+    APIVersion:
+      schema:
+        type: string
+        example: '1.0'
+
+  schemas:
+    # --- Enums ---
+    PaymentType:
+      type: string
+      enum:
+        - DOMESTIC_BANK
+        - BANK_TO_WALLET
+        - WALLET_TO_BANK
+        - WALLET_TO_WALLET
+        - BILL_PAYMENT
+        - MERCHANT_PAYMENT
+        - BULK_DISBURSEMENT
+        - SCHEDULED
+
+    PaymentStatus:
+      type: string
+      enum:
+        - PENDING
+        - AUTHORISED
+        - REJECTED
+        - ACCEPTED_SETTLEMENT_IN_PROCESS
+        - ACCEPTED_SETTLEMENT_COMPLETED
+        - ACCEPTED_CREDIT_SETTLEMENT_COMPLETED
+        - CANCELLED
+
+    PaymentConsentStatus:
+      type: string
+      enum:
+        - PENDING
+        - AUTHORISED
+        - REJECTED
+        - CONSUMED
+        - EXPIRED
+
+    ChargeBearer:
+      type: string
+      enum: [DEBTOR, CREDITOR, SHARED]
+
+    ChargeType:
+      type: string
+      enum:
+        - TRANSFER_FEE
+        - NETWORK_FEE
+        - CURRENCY_CONVERSION_FEE
+        - AGENT_FEE
+        - TAX
+
+    BillerCategory:
+      type: string
+      enum:
+        - ELECTRICITY
+        - WATER
+        - TAX
+        - TELEVISION
+        - INTERNET
+        - INSURANCE
+        - EDUCATION
+        - GOVERNMENT
+        - TELECOM
+        - OTHER
+
+    RejectionReason:
+      type: string
+      enum:
+        - INSUFFICIENT_FUNDS
+        - ACCOUNT_BLOCKED
+        - INVALID_CREDITOR
+        - COMPLIANCE_BLOCK
+        - DAILY_LIMIT
+        - NETWORK_UNAVAILABLE
+        - TIMEOUT
+        - DUPLICATE
+        - PSU_DENIED
+        - CONSENT_EXPIRED
+        - BILLER_REJECTED
+
+    IdentificationType:
+      type: string
+      enum:
+        - MSISDN
+        - ACCOUNT_NUMBER
+        - IBAN
+        - NATIONAL_ID
+        - BOU_SORT_CODE
+        - SACCO_MEMBER_ID
+        - MERCHANT_CODE
+
+    StandingOrderFrequency:
+      type: string
+      enum: [WEEKLY, FORTNIGHTLY, MONTHLY, QUARTERLY, SEMI_ANNUALLY, ANNUALLY]
+
+    # --- Core schemas ---
+    Amount:
+      type: object
+      required: [Amount, Currency]
+      properties:
+        Amount:
+          type: string
+          pattern: '^\d+\.\d{2}$'
+          example: '150000.00'
+        Currency:
+          type: string
+          pattern: '^[A-Z]{3}$'
+          example: UGX
+
+    AccountReference:
+      type: object
+      required: [IdentificationType, Identification]
+      properties:
+        IdentificationType:
+          $ref: '#/components/schemas/IdentificationType'
+        Identification:
+          type: string
+          maxLength: 256
+        Name:
+          type: string
+          maxLength: 256
+        InstitutionFSPId:
+          type: string
+          description: Directory ID of the account's FSP
+
+    Purpose:
+      type: object
+      required: [code, text]
+      properties:
+        code:
+          type: string
+          description: Standardised purpose code from UOFS Section 03
+          example: PAYMENT_TRANSFER
+        text:
+          type: object
+          required: [en]
+          properties:
+            en:
+              type: string
+              description: English purpose description
+            lg:
+              type: string
+              description: Luganda purpose description
+          additionalProperties:
+            type: string
+          description: Multi-language purpose text. MUST include 'en'.
+
+    RemittanceInformation:
+      type: object
+      properties:
+        Reference:
+          type: string
+          maxLength: 35
+          description: Structured reference (visible to both parties)
+        Unstructured:
+          type: string
+          maxLength: 140
+          description: Free-text description
+
+    Charge:
+      type: object
+      required: [ChargeType, Amount]
+      properties:
+        ChargeType:
+          $ref: '#/components/schemas/ChargeType'
+        Amount:
+          $ref: '#/components/schemas/Amount'
+        ChargeBearer:
+          $ref: '#/components/schemas/ChargeBearer'
+        Estimated:
+          type: boolean
+          default: false
+          description: True if the fee is estimated (final fee MUST NOT exceed estimate by >10%)
+
+    StatusReason:
+      type: object
+      required: [Code, Description]
+      properties:
+        Code:
+          $ref: '#/components/schemas/RejectionReason'
+        Description:
+          type: string
+          description: Human-readable explanation
+
+    PaginationLinks:
+      type: object
+      required: [Self]
+      properties:
+        Self:
+          type: string
+          format: uri
+        First:
+          type: string
+          format: uri
+        Prev:
+          type: string
+          format: uri
+        Next:
+          type: string
+          format: uri
+        Last:
+          type: string
+          format: uri
+
+    Meta:
+      type: object
+      required: [RequestTimestamp]
+      properties:
+        TotalItems:
+          type: integer
+        ItemsPerPage:
+          type: integer
+        RequestTimestamp:
+          type: string
+          format: date-time
+
+    # --- Payment Consent ---
+    PaymentConsentRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required:
+            - PaymentType
+            - InstructionIdentification
+            - EndToEndIdentification
+            - InstructedAmount
+            - DebtorAccount
+            - CreditorAccount
+            - Purpose
+          properties:
+            PaymentType:
+              $ref: '#/components/schemas/PaymentType'
+            InstructionIdentification:
+              type: string
+              maxLength: 35
+              description: PISP's unique instruction identifier
+            EndToEndIdentification:
+              type: string
+              maxLength: 35
+              description: End-to-end reference preserved across all payment legs (ISO 20022 EndToEndId)
+            InstructedAmount:
+              $ref: '#/components/schemas/Amount'
+            DebtorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            CreditorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            Purpose:
+              $ref: '#/components/schemas/Purpose'
+            RemittanceInformation:
+              $ref: '#/components/schemas/RemittanceInformation'
+            RequestedExecutionDateTime:
+              type: string
+              format: date-time
+              description: Required for SCHEDULED payments. Minimum 1 hour, maximum 365 days from now.
+            ChargeBearer:
+              $ref: '#/components/schemas/ChargeBearer'
+            BillerDetails:
+              $ref: '#/components/schemas/BillerDetails'
+            RecurrenceDetails:
+              $ref: '#/components/schemas/RecurrenceDetails'
+
+    PaymentConsentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required:
+            - ConsentId
+            - Status
+            - CreatedAt
+            - ExpiresAt
+            - PaymentType
+            - InstructedAmount
+            - DebtorAccount
+            - CreditorAccount
+          properties:
+            ConsentId:
+              type: string
+              description: Payment consent identifier
+            Status:
+              $ref: '#/components/schemas/PaymentConsentStatus'
+            CreatedAt:
+              type: string
+              format: date-time
+            ExpiresAt:
+              type: string
+              format: date-time
+              description: Consent expires 15 minutes after creation if not authorised
+            PaymentType:
+              $ref: '#/components/schemas/PaymentType'
+            InstructionIdentification:
+              type: string
+            EndToEndIdentification:
+              type: string
+            InstructedAmount:
+              $ref: '#/components/schemas/Amount'
+            DebtorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            CreditorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            Charges:
+              type: array
+              items:
+                $ref: '#/components/schemas/Charge'
+              description: Fees disclosed before PSU authorisation
+            ExchangeRateInformation:
+              type: object
+              properties:
+                UnitCurrency:
+                  type: string
+                ExchangeRate:
+                  type: string
+                RateType:
+                  type: string
+                  enum: [ACTUAL, INDICATIVE, AGREED]
+        Links:
+          type: object
+          required: [Self]
+          properties:
+            Self:
+              type: string
+              format: uri
+            Authorise:
+              type: string
+              format: uri
+              description: URL to redirect the PSU for authorisation
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Payment Execution ---
+    PaymentExecutionRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required: [ConsentId]
+          properties:
+            ConsentId:
+              type: string
+              description: The authorised payment consent ID
+
+    PaymentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required:
+            - PaymentId
+            - ConsentId
+            - Status
+            - CreatedAt
+            - PaymentType
+            - InstructedAmount
+            - DebtorAccount
+            - CreditorAccount
+          properties:
+            PaymentId:
+              type: string
+            ConsentId:
+              type: string
+            Status:
+              $ref: '#/components/schemas/PaymentStatus'
+            CreatedAt:
+              type: string
+              format: date-time
+            StatusUpdateDateTime:
+              type: string
+              format: date-time
+            PaymentType:
+              $ref: '#/components/schemas/PaymentType'
+            InstructionIdentification:
+              type: string
+            EndToEndIdentification:
+              type: string
+            InstructedAmount:
+              $ref: '#/components/schemas/Amount'
+            DebtorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            CreditorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            Charges:
+              type: array
+              items:
+                $ref: '#/components/schemas/Charge'
+            DebitedAmount:
+              $ref: '#/components/schemas/Amount'
+              description: Total amount debited (instructed amount + fees)
+            StatusReason:
+              $ref: '#/components/schemas/StatusReason'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Bill Payment ---
+    BillerDetails:
+      type: object
+      required: [BillerId, CustomerAccountNumber]
+      properties:
+        BillerId:
+          type: string
+          description: Biller's registered identifier
+        BillerCode:
+          type: string
+          description: Short biller code (e.g., UMEME, NWSC)
+        CustomerAccountNumber:
+          type: string
+          description: Customer's account number with the biller (meter number, PRN, etc.)
+        BillReference:
+          type: string
+          description: Bill-specific reference
+        BillPeriod:
+          type: string
+          description: Billing period (e.g., 2026-03)
+
+    Biller:
+      type: object
+      required: [BillerId, BillerName, BillerCategory, BillerCode, SupportedPaymentMethods]
+      properties:
+        BillerId:
+          type: string
+        BillerName:
+          type: string
+        BillerCategory:
+          $ref: '#/components/schemas/BillerCategory'
+        BillerCode:
+          type: string
+        AccountNumberFormat:
+          type: string
+          description: Regex pattern for validating customer account numbers
+        AccountNumberLabel:
+          type: string
+          description: Human-readable label for the account number field (e.g., "Meter Number")
+        SupportedPaymentMethods:
+          type: array
+          items:
+            type: string
+            enum: [BANK_TRANSFER, MOBILE_WALLET]
+        MinimumAmount:
+          $ref: '#/components/schemas/Amount'
+        MaximumAmount:
+          $ref: '#/components/schemas/Amount'
+
+    BillerListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Biller]
+          properties:
+            Biller:
+              type: array
+              items:
+                $ref: '#/components/schemas/Biller'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    BillerDetailResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Biller]
+          properties:
+            Biller:
+              $ref: '#/components/schemas/Biller'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Bulk Payment ---
+    BulkPaymentItem:
+      type: object
+      required:
+        - InstructionIdentification
+        - EndToEndIdentification
+        - InstructedAmount
+        - CreditorAccount
+      properties:
+        InstructionIdentification:
+          type: string
+          maxLength: 35
+        EndToEndIdentification:
+          type: string
+          maxLength: 35
+        InstructedAmount:
+          $ref: '#/components/schemas/Amount'
+        CreditorAccount:
+          $ref: '#/components/schemas/AccountReference'
+        RemittanceInformation:
+          $ref: '#/components/schemas/RemittanceInformation'
+
+    BulkPaymentConsentRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required:
+            - PaymentType
+            - DebtorAccount
+            - TotalAmount
+            - NumberOfPayments
+            - BatchReference
+            - Purpose
+            - Payments
+          properties:
+            PaymentType:
+              type: string
+              enum: [BULK_DISBURSEMENT]
+            DebtorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            TotalAmount:
+              $ref: '#/components/schemas/Amount'
+            NumberOfPayments:
+              type: integer
+              minimum: 2
+              maximum: 1000
+            BatchReference:
+              type: string
+              maxLength: 35
+            Purpose:
+              $ref: '#/components/schemas/Purpose'
+            Payments:
+              type: array
+              minItems: 2
+              maxItems: 1000
+              items:
+                $ref: '#/components/schemas/BulkPaymentItem'
+
+    BulkPaymentConsentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [ConsentId, Status, TotalAmount, NumberOfPayments]
+          properties:
+            ConsentId:
+              type: string
+            Status:
+              $ref: '#/components/schemas/PaymentConsentStatus'
+            CreatedAt:
+              type: string
+              format: date-time
+            ExpiresAt:
+              type: string
+              format: date-time
+            TotalAmount:
+              $ref: '#/components/schemas/Amount'
+            NumberOfPayments:
+              type: integer
+            BatchReference:
+              type: string
+            Charges:
+              type: array
+              items:
+                $ref: '#/components/schemas/Charge'
+        Links:
+          type: object
+          properties:
+            Self:
+              type: string
+              format: uri
+            Authorise:
+              type: string
+              format: uri
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    BulkPaymentExecutionRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required: [ConsentId]
+          properties:
+            ConsentId:
+              type: string
+
+    BulkPaymentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [BulkPaymentId, ConsentId, Status, TotalAmount, NumberOfPayments]
+          properties:
+            BulkPaymentId:
+              type: string
+            ConsentId:
+              type: string
+            Status:
+              $ref: '#/components/schemas/PaymentStatus'
+            TotalAmount:
+              $ref: '#/components/schemas/Amount'
+            NumberOfPayments:
+              type: integer
+            PaymentStatuses:
+              type: object
+              properties:
+                Completed:
+                  type: integer
+                InProcess:
+                  type: integer
+                Rejected:
+                  type: integer
+            BatchReference:
+              type: string
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    BulkPaymentItemStatus:
+      type: object
+      required: [PaymentId, InstructionIdentification, Status, InstructedAmount]
+      properties:
+        PaymentId:
+          type: string
+        InstructionIdentification:
+          type: string
+        Status:
+          $ref: '#/components/schemas/PaymentStatus'
+        StatusUpdateDateTime:
+          type: string
+          format: date-time
+        StatusReason:
+          $ref: '#/components/schemas/StatusReason'
+        InstructedAmount:
+          $ref: '#/components/schemas/Amount'
+        CreditorName:
+          type: string
+        Charges:
+          type: array
+          items:
+            $ref: '#/components/schemas/Charge'
+
+    BulkPaymentItemListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [Payment]
+          properties:
+            Payment:
+              type: array
+              items:
+                $ref: '#/components/schemas/BulkPaymentItemStatus'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Scheduled Payment ---
+    RecurrenceDetails:
+      type: object
+      required: [Frequency, FirstPaymentDate]
+      properties:
+        Frequency:
+          $ref: '#/components/schemas/StandingOrderFrequency'
+        FirstPaymentDate:
+          type: string
+          format: date
+        FinalPaymentDate:
+          type: string
+          format: date
+        NumberOfPayments:
+          type: integer
+          minimum: 1
+        RecurringAmount:
+          $ref: '#/components/schemas/Amount'
+
+    ScheduledPayment:
+      type: object
+      required: [ScheduledPaymentId, ConsentId, Status, PaymentType, InstructedAmount]
+      properties:
+        ScheduledPaymentId:
+          type: string
+        ConsentId:
+          type: string
+        Status:
+          type: string
+          enum: [SCHEDULED, EXECUTED, CANCELLED, FAILED]
+        PaymentType:
+          $ref: '#/components/schemas/PaymentType'
+        RequestedExecutionDateTime:
+          type: string
+          format: date-time
+        InstructedAmount:
+          $ref: '#/components/schemas/Amount'
+        CreditorAccount:
+          $ref: '#/components/schemas/AccountReference'
+        RecurrenceDetails:
+          $ref: '#/components/schemas/RecurrenceDetails'
+        LastExecutionDateTime:
+          type: string
+          format: date-time
+        NextExecutionDateTime:
+          type: string
+          format: date-time
+        ExecutionsCompleted:
+          type: integer
+        ExecutionsRemaining:
+          type: integer
+
+    ScheduledPaymentResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [ScheduledPayment]
+          properties:
+            ScheduledPayment:
+              $ref: '#/components/schemas/ScheduledPayment'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    ScheduledPaymentListResponse:
+      type: object
+      required: [Data, Links, Meta]
+      properties:
+        Data:
+          type: object
+          required: [ScheduledPayment]
+          properties:
+            ScheduledPayment:
+              type: array
+              items:
+                $ref: '#/components/schemas/ScheduledPayment'
+        Links:
+          $ref: '#/components/schemas/PaginationLinks'
+        Meta:
+          $ref: '#/components/schemas/Meta'
+
+    # --- Confirmation of Funds ---
+    ConfirmationOfFundsRequest:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required: [DebtorAccount, InstructedAmount]
+          properties:
+            DebtorAccount:
+              $ref: '#/components/schemas/AccountReference'
+            InstructedAmount:
+              $ref: '#/components/schemas/Amount'
+
+    ConfirmationOfFundsResponse:
+      type: object
+      required: [Data]
+      properties:
+        Data:
+          type: object
+          required: [FundsAvailable, FundsAvailableDateTime]
+          properties:
+            FundsAvailable:
+              type: boolean
+              description: Whether sufficient funds exist for the amount plus estimated fees
+            FundsAvailableDateTime:
+              type: string
+              format: date-time
+              description: Timestamp of the funds check
+
+    # --- Event Notification ---
+    PaymentEventNotification:
+      type: object
+      required: [notificationId, eventType, eventDateTime, consentId, resourceType, resourceId]
+      properties:
+        notificationId:
+          type: string
+        eventType:
+          type: string
+          enum:
+            - PaymentStatusChanged
+            - PaymentAcceptedSettlementCompleted
+            - PaymentAcceptedCreditSettlementCompleted
+            - PaymentRejected
+            - BulkPaymentCompleted
+            - ScheduledPaymentExecuted
+            - ScheduledPaymentFailed
+        eventDateTime:
+          type: string
+          format: date-time
+        consentId:
+          type: string
+        resourceType:
+          type: string
+          enum: [payment, bulk-payment, scheduled-payment]
+        resourceId:
+          type: string
+        data:
+          type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/PaymentStatus'
+            statusUpdateDateTime:
+              type: string
+              format: date-time
+        links:
+          type: object
+          properties:
+            resource:
+              type: string
+              format: uri
+
+    # --- Error ---
+    ErrorResponse:
+      type: object
+      required: [Errors, Code, Id, Message]
+      properties:
+        Errors:
+          type: array
+          items:
+            type: object
+            required: [ErrorCode, Message]
+            properties:
+              ErrorCode:
+                type: string
+                example: UOFS.Payment.InsufficientFunds
+              Message:
+                type: string
+              Path:
+                type: string
+              Url:
+                type: string
+                format: uri
+        Code:
+          type: string
+        Id:
+          type: string
+          format: uuid
+        Message:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Invalid request (field validation, missing fields, amount errors)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Missing, expired, or invalid access token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Insufficient consent scope or consent expired/revoked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalError:
+      description: Unexpected server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
