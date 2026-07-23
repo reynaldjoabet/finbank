@@ -1,7 +1,7 @@
 {
     "generatorName": "scala-sttp4-jsoniter",
-    "inputSpec": "account-information-codegen/account-information.yaml",
-    "outputDir": "account-information-codegen/src/main/scala",
+    "inputSpec": "modules/account-information-codegen/account-information.yaml",
+    "outputDir": "modules/account-information-codegen/src/main/scala",
     "mainPackage": "",
     "apiPackage": "account.information.api",
     "modelPackage": "account.information.models",

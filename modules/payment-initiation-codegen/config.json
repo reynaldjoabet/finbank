@@ -1,7 +1,7 @@
 {
     "generatorName": "scala-sttp4-jsoniter",
-    "inputSpec": "payment-initiation-codegen/payment-initiation.yaml",
-    "outputDir": "payment-initiation-codegen/src/main/scala",
+    "inputSpec": "modules/payment-initiation-codegen/payment-initiation.yaml",
+    "outputDir": "modules/payment-initiation-codegen/src/main/scala",
     "mainPackage": "",
     "apiPackage": "payment.initiation.api",
     "modelPackage": "payment.initiation.models",

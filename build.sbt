@@ -112,14 +112,14 @@ lazy val codegenSettings = Seq(
   openApiGenerateMetadata := SettingDisabled,
   // Use the same JSON so CLI and SBT stay in sync
   openApiConfigFile := ((Compile / baseDirectory).value / "config.json").getPath,
-  // One .openapi-generator-ignore shared by both modules, at the repo root.
-  // The generator matches its patterns relative to the ignore file's own
-  // directory (CodegenIgnoreProcessor.allowsFile relativizes each output file
-  // against the ignore file's parent), so a root-level file with
-  // `*/src/main/scala/...` patterns reaches into each module by name. This is
-  // what keeps the generator's sbt scaffold (build.sbt, project/, .scalafmt.conf)
-  // and README out of the source tree.
-  openApiIgnoreFileOverride := ((ThisBuild / baseDirectory).value / ".openapi-generator-ignore").getPath,
+  // One .openapi-generator-ignore shared by both modules, at the modules/ root
+  // (one level above each module's own directory). The generator matches its
+  // patterns relative to the ignore file's own directory
+  // (CodegenIgnoreProcessor.allowsFile relativizes each output file against the
+  // ignore file's parent), so `*/src/main/scala/...` patterns reach into each
+  // modules/<name> by name. This keeps the generator's sbt scaffold (build.sbt,
+  // project/, .scalafmt.conf) and README out of the source tree.
+  openApiIgnoreFileOverride := ((ThisBuild / baseDirectory).value / "modules" / ".openapi-generator-ignore").getPath,
   // Put generated sources where SBT expects managed sources
   openApiOutputDir := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
   openApiGenerateModelTests := SettingDisabled,
@@ -169,12 +169,12 @@ lazy val codegenSettings = Seq(
   scalacOptions := Seq("-release:17")
 )
 
-/** Defines an OpenAPI client module named `id`, rooted at the directory `id`. Everything specific to the module --
-  * input spec, api/model packages, output dir -- lives in that directory's config.json (see codegenSettings), so the
-  * project id is the only thing that varies between modules.
+/** Defines an OpenAPI client module named `id`, rooted at `modules/<id>`. Everything specific to the module -- input
+  * spec, api/model packages, output dir -- lives in that directory's config.json (see codegenSettings), so the project
+  * id is the only thing that varies between modules.
   */
 def codegenModule(id: String): Project =
-  Project(id, file(id))
+  Project(id, file(s"modules/$id"))
     .enablePlugins(OpenApiGeneratorPlugin)
     .settings(codegenSettings)
     .settings(name := id)
@@ -220,35 +220,35 @@ lazy val root = (project in file("."))
     ) ++ codegenModules.map(m => LocalProject(m.id)) *
   )
 
-lazy val unityPay = (project in file("unity-pay"))
+lazy val unityPay = (project in file("modules/unity-pay"))
   .settings(commonSettings)
   .settings(
     name := "unity-pay",
     libraryDependencies ++= commonDependencies
   )
 
-lazy val njangi = (project in file("njangi"))
+lazy val njangi = (project in file("modules/njangi"))
   .settings(commonSettings)
   .settings(
     name := "njangi",
     libraryDependencies ++= commonDependencies
   )
 
-lazy val billing = (project in file("billing"))
+lazy val billing = (project in file("modules/billing"))
   .settings(commonSettings)
   .settings(
     name := "billing",
     libraryDependencies ++= commonDependencies
   )
 
-lazy val coinstar = (project in file("coinstar"))
+lazy val coinstar = (project in file("modules/coinstar"))
   .settings(commonSettings)
   .settings(
     name := "coinstar",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
-lazy val migrantbank = (project in file("migrantbank"))
+lazy val migrantbank = (project in file("modules/migrantbank"))
   .settings(commonSettings)
   .settings(
     name := "migrantbank",
@@ -257,14 +257,14 @@ lazy val migrantbank = (project in file("migrantbank"))
     )
   )
 
-lazy val wallet = (project in file("wallet"))
+lazy val wallet = (project in file("modules/wallet"))
   .settings(commonSettings)
   .settings(
     name := "wallet",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
-lazy val revenue = (project in file("revenue"))
+lazy val revenue = (project in file("modules/revenue"))
   .settings(commonSettings)
   .settings(
     name := "revenue",
