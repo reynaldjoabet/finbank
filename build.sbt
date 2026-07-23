@@ -112,12 +112,14 @@ lazy val codegenSettings = Seq(
   openApiGenerateMetadata := SettingDisabled,
   // Use the same JSON so CLI and SBT stay in sync
   openApiConfigFile := ((Compile / baseDirectory).value / "config.json").getPath,
-  // NB: there is deliberately no `openApiIgnoreFileOverride` here. A
-  // `.openapi-generator-ignore` file has no effect on this build -- once
-  // `globalProperties` selects what to emit (see config.json), the generator
-  // stops consulting the ignore file for supporting files, so listing
-  // `build.sbt` in one is silently ignored. Unwanted output is excluded via the
-  // `globalProperties.supportingFiles` whitelist in config.json instead.
+  // One .openapi-generator-ignore shared by both modules, at the repo root.
+  // The generator matches its patterns relative to the ignore file's own
+  // directory (CodegenIgnoreProcessor.allowsFile relativizes each output file
+  // against the ignore file's parent), so a root-level file with
+  // `*/src/main/scala/...` patterns reaches into each module by name. This is
+  // what keeps the generator's sbt scaffold (build.sbt, project/, .scalafmt.conf)
+  // and README out of the source tree.
+  openApiIgnoreFileOverride := ((ThisBuild / baseDirectory).value / ".openapi-generator-ignore").getPath,
   // Put generated sources where SBT expects managed sources
   openApiOutputDir := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
   openApiGenerateModelTests := SettingDisabled,
@@ -135,11 +137,10 @@ lazy val codegenSettings = Seq(
   // openApiGenerate returns the exact Seq[File] it just wrote, so `generate`
   // (typed Seq[File], see Dependencies.scala) forwards that straight through --
   // no re-globbing of the output directory, which would also pick up stale
-  // files left by a previous run that the current spec no longer produces.
-  //
-  // Filtered to .scala because this value feeds `sourceGenerators`, so every
-  // file returned is handed to the compiler. The config.json supportingFiles
- 
+  // files left by a previous run that the current spec no longer produces. No
+  // .scala filter is needed here: the .openapi-generator-ignore (see
+  // openApiIgnoreFileOverride above) already keeps everything but Scala sources
+  // out of the output dir, so every file returned is a compilation unit.
   generate := Def.uncached {
     openApiGenerate.value
   },

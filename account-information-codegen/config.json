@@ -6,11 +6,6 @@
     "apiPackage": "account.information.api",
     "modelPackage": "account.information.models",
     "invokerPackage": "account.information",
-    "globalProperties": {
-        "apis": "",
-        "models": "",
-        "supportingFiles": "JsonSupport.scala,Helpers.scala,AdditionalTypeSerializers.scala"
-    },
     "modelPropertyNaming": "camelCase",
     "ensureUniqueParams": "true",
     "sortParamsByRequiredFlag": "true",

@@ -6,11 +6,6 @@
     "apiPackage": "payment.initiation.api",
     "modelPackage": "payment.initiation.models",
     "invokerPackage": "payment.initiation",
-    "globalProperties": {
-        "apis": "",
-        "models": "",
-        "supportingFiles": "JsonSupport.scala,Helpers.scala,AdditionalTypeSerializers.scala"
-    },
     "modelPropertyNaming": "camelCase",
     "ensureUniqueParams": "true",
     "sortParamsByRequiredFlag": "true",
