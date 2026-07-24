@@ -88,8 +88,9 @@ lazy val codegenSettings = Seq(
   openApiGenerateMetadata := SettingDisabled,
   // Use the same JSON so CLI and SBT stay in sync
   openApiConfigFile := ((Compile / baseDirectory).value / "config.json").getPath,
-
-  openApiIgnoreFileOverride := ((ThisBuild / baseDirectory).value / "modules" / ".openapi-generator-ignore").getPath,
+  // Shared ignore file lives one level up, in modules/ -- i.e. each module's
+  // parent dir. getParentFile keeps the path normalized (no literal /../).
+  openApiIgnoreFileOverride := (baseDirectory.value.getParentFile / ".openapi-generator-ignore").getPath,
   // Put generated sources where SBT expects managed sources
   openApiOutputDir := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
   openApiGenerateModelTests := SettingDisabled,
