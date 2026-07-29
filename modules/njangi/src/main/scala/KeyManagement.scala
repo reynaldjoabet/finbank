@@ -38,12 +38,12 @@ abstract class KeyContainer(
 
 class RsaKeyContainer(
     keyPair: KeyPair,
-    algorithm: String,
-    created: Instant
+    keyAlgorithm: String,
+    keyCreated: Instant
 ) extends KeyContainer(
       id = java.util.UUID.randomUUID().toString,
-      algorithm = algorithm,
-      created = created
+      algorithm = keyAlgorithm,
+      created = keyCreated
     ) {
   val publicKey: RSAPublicKey = keyPair.getPublic.asInstanceOf[RSAPublicKey]
   val privateKey: RSAPrivateKey = keyPair.getPrivate.asInstanceOf[RSAPrivateKey]
@@ -53,26 +53,26 @@ class RsaKeyContainer(
 
 class EcKeyContainer(
     keyPair: KeyPair,
-    algorithm: String,
-    created: Instant
+    keyAlgorithm: String,
+    keyCreated: Instant
 ) extends KeyContainer(
       id = java.util.UUID.randomUUID().toString,
-      algorithm = algorithm,
-      created = created
+      algorithm = keyAlgorithm,
+      created = keyCreated
     ) {
   override def toSecurityKey(): KeyPair = keyPair
 }
 
 class X509KeyContainer(
     keyPair: KeyPair,
-    algorithm: String,
-    created: Instant,
+    keyAlgorithm: String,
+    keyCreated: Instant,
     retirementAge: Duration,
     issuer: String = "OP"
 ) extends KeyContainer(
       id = java.util.UUID.randomUUID().toString,
-      algorithm = algorithm,
-      created = created,
+      algorithm = keyAlgorithm,
+      created = keyCreated,
       hasX509Certificate = true
     ) {
   // In a real implementation, a self-signed X509 cert would be created here

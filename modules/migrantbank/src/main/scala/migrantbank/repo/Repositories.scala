@@ -77,10 +77,10 @@ object UserRepo {
 
   def updateKyc(id: UUID, status: KycStatus)(using DbCon): Unit =
     sql"UPDATE users SET kyc_status = ${status.toString} WHERE id = $id".update
-      .run()
+      .run(): Unit
 
   def updatePassword(id: UUID, hash: String)(using DbCon): Unit =
-    sql"UPDATE users SET password_hash = $hash WHERE id = $id".update.run()
+    sql"UPDATE users SET password_hash = $hash WHERE id = $id".update.run(): Unit
 
   def listPendingKyc()(using DbCon): List[UserRow] =
     sql"SELECT * FROM users WHERE kyc_status IN ('PENDING','MANUAL_REVIEW_REQUIRED') ORDER BY created_at DESC LIMIT 200"
@@ -97,7 +97,7 @@ object SmsCodeRepo {
       INSERT INTO sms_codes (user_id, code_hash, expires_at) VALUES ($userId, ${TokenHash
         .sha256Hex(code)}, $expiresAt)
       ON CONFLICT (user_id) DO UPDATE SET code_hash = EXCLUDED.code_hash, expires_at = EXCLUDED.expires_at, created_at = now()
-    """.update.run()
+    """.update.run(): Unit
 
   def verify(userId: UUID, code: String, now: Instant)(using DbCon): Boolean =
     sql"SELECT code_hash, expires_at FROM sms_codes WHERE user_id = $userId"
@@ -126,7 +126,7 @@ object AccountRepo {
 
   def updateBalance(id: UUID, newBalance: Long)(using DbCon): Unit =
     sql"UPDATE accounts SET balance_minor = $newBalance WHERE id = $id".update
-      .run()
+      .run(): Unit
 
   def ensureUserAccount(userId: UUID, currency: String)(using
       DbCon
@@ -137,7 +137,7 @@ object AccountRepo {
         val id = UUID.randomUUID()
         sql"""INSERT INTO accounts (id, user_id, account_type, name, currency, balance_minor)
               VALUES ($id, $userId, 'USER', 'USER_MAIN', $currency, 0)""".update
-          .run()
+          .run(): Unit
         getByIdForUpdate(id).getOrElse(
           throw new RuntimeException(s"Account $id not found after insert")
         )
@@ -156,7 +156,7 @@ object TransferRepo {
     sql"""
       INSERT INTO transfers (id, transfer_type, from_user_id, to_user_id, ach_destination, amount_minor, currency, note, status, idempotency_key, risk_flag, risk_reason, created_at)
       VALUES (${t.id}, ${t.transferType.toString}, ${t.fromUserId}, ${t.toUserId}, ${t.achDestination}, ${t.amount.amountMinor}, ${t.amount.currency}, ${t.note}, ${t.status.toString}, ${t.idempotencyKey}, ${t.riskFlag}, ${t.riskReason}, ${t.createdAt})
-    """.update.run()
+    """.update.run(): Unit
 
   def sumOutgoingVolume(userId: UUID)(using DbCon): Long =
     sql"SELECT COALESCE(SUM(amount_minor),0) FROM transfers WHERE from_user_id = $userId AND status IN ('PROCESSING','COMPLETED')"
@@ -186,7 +186,7 @@ object TransferRepo {
       DbCon
   ): Unit =
     sql"UPDATE transfers SET status = ${status.toString} WHERE id = $transferId".update
-      .run()
+      .run(): Unit
 
   def listFlagged(limit: Int)(using DbCon): List[Transfer] =
     List.empty // Placeholder
@@ -200,11 +200,11 @@ object RefreshTokenRepo {
       expiresAt: Instant
   )(using DbCon): Unit =
     sql"INSERT INTO refresh_tokens (token_id, user_id, token_hash, expires_at) VALUES ($tokenId, $userId, $tokenHash, $expiresAt)".update
-      .run()
+      .run(): Unit
 
   def revoke(tokenId: UUID)(using DbCon): Unit =
     sql"UPDATE refresh_tokens SET revoked_at = now() WHERE token_id = $tokenId".update
-      .run()
+      .run(): Unit
 
   def findValid(userId: UUID, tokenHash: String, now: Instant)(using
       DbCon
@@ -222,7 +222,7 @@ object AuditRepo {
       details: String
   )(using DbCon): Unit =
     sql"INSERT INTO audit_events (kind, user_id, correlation_id, details) VALUES ($kind, $userId, $correlationId, $details)".update
-      .run()
+      .run(): Unit
 
   def listLatest(limit: Int)(using DbCon): List[AuditEvent] =
     List.empty // Placeholder
@@ -236,11 +236,11 @@ object CardRepo {
   def insert(card: Card)(using DbCon): Unit =
     sql"""INSERT INTO cards (id, user_id, kind, last4, status, delivery_status, created_at)
           VALUES (${card.id}, ${card.userId}, ${card.kind.toString}, ${card.last4}, ${card.status.toString}, ${card.deliveryStatus.toString}, ${card.createdAt})""".update
-      .run()
+      .run(): Unit
 
   def updateDelivery(cardId: UUID, status: DeliveryStatus)(using DbCon): Unit =
     sql"UPDATE cards SET delivery_status = ${status.toString} WHERE id = $cardId".update
-      .run()
+      .run(): Unit
 }
 
 // Family group repository

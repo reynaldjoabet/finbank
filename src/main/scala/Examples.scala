@@ -11,13 +11,13 @@ object Examples {
   given JsonValueCodec[User] = JsonCodecMaker.make
 
   // Encoding — refined type is just the base value, encodes normally
-  writeToString(User("totore", 18)) // {"name":"totore","age":18}
+  writeToString(User("totore", 18)): Unit // {"name":"totore","age":18}
 
   // Decoding — checks constraint, fails if invalid
-  readFromString[User]("""{"name":"totore","age":18}""") // User("totore", 18)
+  readFromString[User]("""{"name":"totore","age":18}"""): Unit // User("totore", 18)
   readFromString[User](
     """{"name":"totore","age":-18}"""
-  ) // Error: "Should be strictly positive"
+  ): Unit // Error: "Should be strictly positive"
 }
 
 object ConfigExample {
@@ -57,8 +57,8 @@ object ZioJsonExample {
   case class User(name: String :| Alphanumeric, age: Int :| Positive)
   given JsonCodec[User] = DeriveJsonCodec.gen
 
-  User("Iltotore", 18).toJson // {"name":"Iltotore","age":18}
-  """{"name":"Iltotore","age":18}""".fromJson[User] // Right(User(Iltotore, 18))
+  User("Iltotore", 18).toJson: Unit // {"name":"Iltotore","age":18}
+  """{"name":"Iltotore","age":18}""".fromJson[User]: Unit // Right(User(Iltotore, 18))
   """{"name":"Iltotore","age":-18}"""
-    .fromJson[User] // Left(.age(Should be greater than 0))
+    .fromJson[User]: Unit // Left(.age(Should be greater than 0))
 }

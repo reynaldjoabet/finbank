@@ -48,9 +48,9 @@ object JsoniterSyntaticSugar {
   val decodedRouteOption = fromJsonString[QuoteService2.RouteOption](json)
 
 //QuoteService2.RouteOption=>Json
-  routeOption.asJson
+  routeOption.asJson: Unit
 
-  writeToString(routeOption.asJson)
+  writeToString(routeOption.asJson): Unit
 
 }
 
