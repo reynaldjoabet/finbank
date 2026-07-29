@@ -7,27 +7,31 @@ ThisBuild / dependencyOverrides ++= Seq(
   zioJson
 )
 
-Global / onChangedBuildSource := ReloadOnSourceChanges
-
-lazy val commonScalacOptions = Seq(
+ThisBuild / scalacOptions := Seq(
+  "-encoding",
+  "UTF-8",
   "-no-indent",
-  "-deprecation", // Warns about deprecated APIs
-  "-feature", // Warns about advanced language features
+  "-deprecation",
+  "-feature",
   "-unchecked",
-  // "-Wunused:imports",
-  //   "-Wunused:privates",
-  //   "-Wunused:locals",
-  //   "-Wunused:explicits",
-  //   "-Wunused:implicits",
-  //   "-Wunused:params",
-  //   "-Wvalue-discard",
-  "-language:strictEquality",
-  "-Xmax-inlines:100",
-  "-release:17"
+  "-source:3.3",
+  "-java-output-version:17",
+  "-Werror",
+  "-Wvalue-discard",
+  "-Wnonunit-statement",
+  "-Xlint:all",
+  "-Ysafe-init",
+  "-Xcheck-macros",
+  "-Xmax-inlines:64"
 )
 
-lazy val commonSettings = Seq(
-  scalacOptions := commonScalacOptions
+Global / onChangedBuildSource := ReloadOnSourceChanges
+
+val generatedScalacOptions = Seq(
+  "-encoding",
+  "UTF-8",
+  "-java-output-version:17",
+  "-Xmax-inlines:64"
 )
 
 val commonDependencies = Seq(
@@ -149,6 +153,7 @@ def codegenModule(id: String): Project =
     .enablePlugins(OpenApiGeneratorPlugin)
     .settings(codegenSettings)
     .settings(name := id)
+    .settings(scalacOptions := generatedScalacOptions)
 
 lazy val paymentInitiationCodegen = codegenModule("payment-initiation-codegen")
 lazy val accountInformationCodegen = codegenModule("account-information-codegen")
@@ -157,7 +162,6 @@ lazy val codegenModules: Seq[Project] =
   Seq(paymentInitiationCodegen, accountInformationCodegen)
 
 lazy val root = (project in file("."))
-  .settings(commonSettings)
   .settings(
     name := "finbank",
     libraryDependencies ++= commonDependencies ++ Seq(
@@ -188,35 +192,30 @@ lazy val root = (project in file("."))
   )
 
 lazy val unityPay = (project in file("modules/unity-pay"))
-  .settings(commonSettings)
   .settings(
     name := "unity-pay",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val njangi = (project in file("modules/njangi"))
-  .settings(commonSettings)
   .settings(
     name := "njangi",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val billing = (project in file("modules/billing"))
-  .settings(commonSettings)
   .settings(
     name := "billing",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val coinstar = (project in file("modules/coinstar"))
-  .settings(commonSettings)
   .settings(
     name := "coinstar",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
 lazy val migrantbank = (project in file("modules/migrantbank"))
-  .settings(commonSettings)
   .settings(
     name := "migrantbank",
     libraryDependencies ++= commonDependencies ++ dbDependencies ++ Seq(
@@ -225,14 +224,12 @@ lazy val migrantbank = (project in file("modules/migrantbank"))
   )
 
 lazy val wallet = (project in file("modules/wallet"))
-  .settings(commonSettings)
   .settings(
     name := "wallet",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
 lazy val revenue = (project in file("modules/revenue"))
-  .settings(commonSettings)
   .settings(
     name := "revenue",
     libraryDependencies ++= commonDependencies ++ dbDependencies
