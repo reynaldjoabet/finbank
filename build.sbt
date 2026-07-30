@@ -1,6 +1,6 @@
 import Dependencies.*
 
-ThisBuild / scalaVersion := "3.3.8"
+ThisBuild / scalaVersion := "3.8.4"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 
 ThisBuild / dependencyOverrides ++= Seq(
@@ -20,7 +20,6 @@ ThisBuild / scalacOptions := Seq(
   "-Wvalue-discard",
   "-Wnonunit-statement",
   "-Xlint:all",
-  "-Ysafe-init",
   "-Xcheck-macros",
   "-Xmax-inlines:64"
 )
