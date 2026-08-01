@@ -1,10 +1,11 @@
 package services.keymanagement
 
-import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.security.{KeyPair, KeyPairGenerator}
+import java.security.interfaces.{ECPrivateKey, ECPublicKey, RSAPrivateKey, RSAPublicKey}
 import java.time.{Duration, Instant}
 
 given CanEqual[Duration, Duration] = CanEqual.derived
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
@@ -40,10 +41,12 @@ class RsaKeyContainer(
       algorithm = keyAlgorithm,
       created = keyCreated
     ) {
-  val publicKey: RSAPublicKey = keyPair.getPublic.asInstanceOf[RSAPublicKey]
+
+  val publicKey: RSAPublicKey   = keyPair.getPublic.asInstanceOf[RSAPublicKey]
   val privateKey: RSAPrivateKey = keyPair.getPrivate.asInstanceOf[RSAPrivateKey]
 
   override def toSecurityKey(): KeyPair = keyPair
+
 }
 
 class EcKeyContainer(
@@ -70,26 +73,34 @@ class X509KeyContainer(
       created = keyCreated,
       hasX509Certificate = true
     ) {
+
   // In a real implementation, a self-signed X509 cert would be created here
   val certificateRawData: String = "" // base64-encoded PFX
 
   override def toSecurityKey(): KeyPair = keyPair
+
 }
 
 // ============================================================
 // Configuration
 // ============================================================
 
-/** Configuration for a signing algorithm */
+/**
+  * Configuration for a signing algorithm
+  */
 final case class SigningAlgorithmConfig(
     name: String,
     useX509Certificate: Boolean = false
 ) {
+
   def isRsaKey: Boolean = name.startsWith("R") || name.startsWith("P")
-  def isEcKey: Boolean = name.startsWith("E")
+  def isEcKey: Boolean  = name.startsWith("E")
+
 }
 
-/** Key management configuration */
+/**
+  * Key management configuration
+  */
 final case class KeyManagementConfig(
     enabled: Boolean = true,
     rsaKeySize: Int = 2048,
@@ -109,14 +120,18 @@ final case class KeyManagementConfig(
 ) {
 
   def defaultSigningAlgorithm: String = signingAlgorithms.head.name
+
   def allowedSigningAlgorithmNames: Set[String] =
     signingAlgorithms.map(_.name).toSet
+
   def keyRetirementAge: Duration = rotationInterval.plus(retentionDuration)
 
   def isRetired(age: Duration): Boolean =
     !age.minus(keyRetirementAge).isNegative
+
   def isExpired(age: Duration): Boolean =
     !age.minus(rotationInterval).isNegative
+
   def isWithinInitializationDuration(age: Duration): Boolean =
     !age.minus(initializationDuration).isNegative || age.equals(
       initializationDuration
@@ -166,14 +181,19 @@ final case class KeyManagementConfig(
       s"UseX509Certificate not supported for EC keys: '${invalidEc.map(_.name).mkString(", ")}'"
     )
   }
+
 }
 
-/** Caching configuration */
+/**
+  * Caching configuration
+  */
 final case class CachingConfig(
     cacheLockTimeout: Duration = Duration.ofSeconds(60)
 )
 
-/** Identity server configuration (combines key management and caching) */
+/**
+  * Identity server configuration (combines key management and caching)
+  */
 final case class IdentityServerConfig(
     keyManagement: KeyManagementConfig,
     caching: CachingConfig = CachingConfig()
@@ -184,37 +204,48 @@ final case class IdentityServerConfig(
 // ============================================================
 
 trait Clock {
+
   def utcNow: Instant
 
   def getAge(date: Instant): Duration = {
-    val now0 = utcNow
+    val now0         = utcNow
     val effectiveNow = if (date.isAfter(now0)) date else now0
     Duration.between(date, effectiveNow)
   }
+
 }
 
 trait SigningKeyStore {
+
   def loadKeysAsync(): Future[Seq[SerializedKey]]
   def storeKeyAsync(key: SerializedKey): Future[Unit]
   def deleteKeyAsync(id: String): Future[Unit]
+
 }
 
 trait SigningKeyStoreCache {
+
   def getKeysAsync(): Future[Option[Seq[KeyContainer]]]
+
   def storeKeysAsync(
       keys: Seq[KeyContainer],
       duration: Duration
   ): Future[Unit]
+
 }
 
 trait SigningKeyProtector {
+
   def protect(key: KeyContainer): SerializedKey
   def unprotect(key: SerializedKey): Option[KeyContainer]
+
 }
 
 trait ConcurrencyLock {
+
   def lockAsync(millisecondsTimeout: Int): Future[Boolean]
   def unlock(): Unit
+
 }
 
 trait IssuerNameService {
@@ -222,6 +253,7 @@ trait IssuerNameService {
 }
 
 trait Logger {
+
   def trace(msg: String, args: Any*): Unit
   def debug(msg: String, args: Any*): Unit
   def info(msg: String, args: Any*): Unit
@@ -230,11 +262,14 @@ trait Logger {
   def error(ex: Throwable, msg: String, args: Any*): Unit
   def isDebugEnabled: Boolean
   def isTraceEnabled: Boolean
+
 }
 
 trait KeyManager {
+
   def getCurrentKeysAsync(): Future[Seq[KeyContainer]]
   def getAllKeysAsync(): Future[Seq[KeyContainer]]
+
 }
 
 // ============================================================
@@ -242,6 +277,7 @@ trait KeyManager {
 // ============================================================
 
 object CryptoHelper {
+
   def createRsaKeyPair(keySize: Int): KeyPair = {
     val gen = KeyPairGenerator.getInstance("RSA")
     gen.initialize(keySize)
@@ -262,6 +298,7 @@ object CryptoHelper {
     case _       =>
       throw new IllegalArgumentException(s"Invalid EC signing algorithm: $alg")
   }
+
 }
 
 // ============================================================
@@ -293,7 +330,7 @@ class DefaultKeyManager(
     getAllKeysInternalAsync().map { case (_, currentKeys) =>
       if (logger.isDebugEnabled) {
         currentKeys.foreach { key =>
-          val age = clock.getAge(key.created)
+          val age       = clock.getAge(key.created)
           val expiresIn = km.rotationInterval.minus(age)
           val retiresIn = km.keyRetirementAge.minus(age)
           logger.info(
@@ -316,10 +353,11 @@ class DefaultKeyManager(
 
   // ---- Internal: Core Key Resolution ----
 
-  private[keymanagement] def getAllKeysInternalAsync(): Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
+  private[keymanagement] def getAllKeysInternalAsync()
+      : Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
     for {
       // Try cache first, then fall back to store
-      cachedResult <- getAllKeysFromCacheAsync()
+      cachedResult         <- getAllKeysFromCacheAsync()
       (cached, initialKeys) =
         if (cachedResult.nonEmpty) (true, cachedResult)
         else (false, Seq.empty[KeyContainer])
@@ -328,19 +366,19 @@ class DefaultKeyManager(
         else Future.successful(initialKeys)
 
       // Check signing keys
-      signingKeys0 = getAllCurrentSigningKeys(keys0)
+      signingKeys0        = getAllCurrentSigningKeys(keys0)
       signingKeysSuccess0 = tryGetAllCurrentSigningKeys(keys0)._1
 
       _ = if (!signingKeysSuccess0 && cached)
-        logger.trace(
-          "Not all signing keys current in cache, reloading keys from database."
-        )
+            logger.trace(
+              "Not all signing keys current in cache, reloading keys from database."
+            )
 
       // Check rotation
       rotationRequired0 =
         if (signingKeysSuccess0) isKeyRotationRequired(keys0) else false
       _ = if (rotationRequired0 && cached)
-        logger.trace("Key rotation required, reloading keys from database.")
+            logger.trace("Key rotation required, reloading keys from database.")
 
       // If work needed, acquire lock and proceed
       result <-
@@ -461,8 +499,8 @@ class DefaultKeyManager(
                 initialActiveKey
               }
 
-              val age = clock.getAge(activeKey.created)
-              val diff = km.rotationInterval.minus(age)
+              val age    = clock.getAge(activeKey.created)
+              val diff   = km.rotationInterval.minus(age)
               val needed = diff.compareTo(km.propagationTime) <= 0
 
               if (!needed) {
@@ -525,24 +563,27 @@ class DefaultKeyManager(
     }
   }
 
-  private[keymanagement] def createNewKeysAndAddToCacheAsync(): Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
+  private[keymanagement] def createNewKeysAndAddToCacheAsync()
+      : Future[(Seq[KeyContainer], Seq[KeyContainer])] = {
     for {
       existingCached <- cache.getKeysAsync().map(_.getOrElse(Seq.empty))
 
       newKeys <- km.signingAlgorithms.foldLeft(
-        Future.successful(Seq.empty[KeyContainer])
-      ) { (acc, alg) =>
-        acc.flatMap { soFar =>
-          createAndStoreNewKeyAsync(alg).map(soFar :+ _)
-        }
-      }
+                   Future.successful(Seq.empty[KeyContainer])
+                 ) { (acc, alg) =>
+                   acc.flatMap { soFar =>
+                     createAndStoreNewKeyAsync(alg).map(soFar :+ _)
+                   }
+                 }
 
       allKeys = existingCached ++ newKeys
 
       // If all keys are within initialization duration, delay and reload
       finalKeys <-
         if (areAllKeysWithinInitializationDuration(allKeys)) {
-          if (!km.initializationSynchronizationDelay.isZero && !km.initializationSynchronizationDelay.isNegative) {
+          if (
+            !km.initializationSynchronizationDelay.isZero && !km.initializationSynchronizationDelay.isNegative
+          ) {
             logger.trace(
               "All keys are new; delaying before reloading keys from store by InitializationSynchronizationDelay for {}.",
               km.initializationSynchronizationDelay
@@ -585,7 +626,9 @@ class DefaultKeyManager(
     if (keys.nonEmpty) {
       val duration =
         if (areAllKeysWithinInitializationDuration(keys)) {
-          if (!km.initializationKeyCacheDuration.isZero && !km.initializationKeyCacheDuration.isNegative) {
+          if (
+            !km.initializationKeyCacheDuration.isZero && !km.initializationKeyCacheDuration.isNegative
+          ) {
             logger.trace(
               "Caching keys with InitializationKeyCacheDuration for {}",
               km.initializationKeyCacheDuration
@@ -726,9 +769,8 @@ class DefaultKeyManager(
 
   private[keymanagement] def filterExpiredKeys(
       keys: Seq[KeyContainer]
-  ): Seq[KeyContainer] = {
+  ): Seq[KeyContainer] =
     keys.filterNot(k => km.isExpired(clock.getAge(k.created)))
-  }
 
   private[keymanagement] def areAllKeysWithinInitializationDuration(
       keys: Seq[KeyContainer]
@@ -745,7 +787,7 @@ class DefaultKeyManager(
       keys: Seq[KeyContainer]
   ): (Boolean, Seq[KeyContainer]) = {
     val signingKeys = getAllCurrentSigningKeys(keys)
-    val success = signingKeys.size == km.allowedSigningAlgorithmNames.size &&
+    val success     = signingKeys.size == km.allowedSigningAlgorithmNames.size &&
       signingKeys.forall(k => km.allowedSigningAlgorithmNames.contains(k.algorithm))
     (success, signingKeys)
   }
@@ -840,7 +882,7 @@ class DefaultKeyManager(
       case _ => // ok
     }
 
-    var now = clock.utcNow
+    var now   = clock.utcNow
     val start = key.created
 
     // Clock skew handling: if the key was created in the "future" relative to this server,
@@ -883,4 +925,5 @@ class DefaultKeyManager(
     logger.trace("Key with kid {} is active.", key.id)
     true
   }
+
 }

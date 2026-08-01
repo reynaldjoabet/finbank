@@ -1,14 +1,15 @@
-import javax.crypto.{Cipher, KeyGenerator, SecretKey}
-import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 import java.security.SecureRandom
 import java.util.Base64
+
+import javax.crypto.{Cipher, KeyGenerator, SecretKey}
+import javax.crypto.spec.{IvParameterSpec, SecretKeySpec}
 
 object CryptoService {
 
   // Configuration for ChaCha20-Poly1305 AEAD
   private val Algorithm = "ChaCha20-Poly1305"
   private val NonceSize = 12 // 96 bits as per RFC 7539
-  private val KeySize = 256
+  private val KeySize   = 256
 
   def encrypt(
       plaintext: String,
@@ -47,7 +48,7 @@ object CryptoService {
 
     // 1. Split the Nonce from the Ciphertext
     val (nonce, ciphertext) = combined.splitAt(NonceSize)
-    val ivSpec = new IvParameterSpec(nonce)
+    val ivSpec              = new IvParameterSpec(nonce)
 
     val cipher = Cipher.getInstance(Algorithm)
     cipher.init(Cipher.DECRYPT_MODE, key, ivSpec)
@@ -59,4 +60,5 @@ object CryptoService {
     val decrypted = cipher.doFinal(ciphertext)
     new String(decrypted, "UTF-8")
   }
+
 }

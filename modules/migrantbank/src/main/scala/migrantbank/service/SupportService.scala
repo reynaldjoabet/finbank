@@ -1,22 +1,26 @@
 package migrantbank.service
 
-import migrantbank.db.Db
-import migrantbank.repo.*
-import migrantbank.domain.*
-import zio.*
-
 import java.util.UUID
 
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.repo.*
+import zio.*
+
 trait SupportService {
+
   def create(
       userId: UUID,
       message: String,
       correlationId: String
   ): IO[AppError, SupportTicket]
+
   def list(userId: UUID): IO[AppError, List[SupportTicket]]
+
 }
 
 object SupportService {
+
   val live: ZLayer[Db, Nothing, SupportService] =
     ZLayer.fromFunction { (db: Db) =>
       new SupportService {
@@ -29,18 +33,18 @@ object SupportService {
           if message.trim.isEmpty then ZIO.fail(AppError.Validation("Message required"))
           else
             for {
-              id <- Random.nextUUID
+              id  <- Random.nextUUID
               now <- Clock.instant
-              t = SupportTicket(id, userId, message, TicketStatus.OPEN, now)
-              _ <- db.transaction {
-                TicketRepo.insert(t)
-                AuditRepo.append(
-                  "support_ticket_created",
-                  Some(userId),
-                  correlationId,
-                  s"ticketId=$id"
-                )
-              }
+              t    = SupportTicket(id, userId, message, TicketStatus.OPEN, now)
+              _   <- db.transaction {
+                     TicketRepo.insert(t)
+                     AuditRepo.append(
+                       "support_ticket_created",
+                       Some(userId),
+                       correlationId,
+                       s"ticketId=$id"
+                     )
+                   }
             } yield t
 
         override def list(userId: UUID): IO[AppError, List[SupportTicket]] =
@@ -49,4 +53,5 @@ object SupportService {
           }
       }
     }
+
 }

@@ -1,25 +1,31 @@
 package coinstar.wallet.service
 
+import java.time.Instant
+
 import coinstar.wallet.domain.*
 import coinstar.wallet.persistence.{LedgerRepo, VoucherRepo, WalletRepo}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
 
-import java.time.Instant
-
 trait WalletService {
+
   def listWallets(userId: UserId): IO[DomainError, List[Wallet]]
   def createWallet(userId: UserId, asset: Asset): IO[DomainError, Wallet]
   def getWallet(userId: UserId, walletId: WalletId): IO[DomainError, Wallet]
+
   def redeemVoucher(
       userId: UserId,
       walletId: WalletId,
       code: String
   ): IO[DomainError, LedgerTxId]
+
   def readiness: IO[DomainError, Unit]
+
 }
+
 object WalletService {
+
   def listWallets(
       userId: UserId
   ): ZIO[WalletService, DomainError, List[Wallet]] =
@@ -46,13 +52,16 @@ object WalletService {
 
   def readiness: ZIO[WalletService, DomainError, Unit] =
     ZIO.serviceWithZIO[WalletService](_.readiness)
+
 }
+
 final class WalletServiceLive(
     quill: Quill.Postgres[SnakeCase],
     walletRepo: WalletRepo,
     ledgerRepo: LedgerRepo,
     voucherRepo: VoucherRepo
 ) extends WalletService {
+
   import quill.*
 
   override def listWallets(userId: UserId): IO[DomainError, List[Wallet]] =
@@ -73,7 +82,8 @@ final class WalletServiceLive(
   override def readiness: IO[DomainError, Unit] =
     walletRepo.ping
 
-  /** Voucher redeem = atomic credit of a wallet + voucher status update + ledger tx recording.
+  /**
+    * Voucher redeem = atomic credit of a wallet + voucher status update + ledger tx recording.
     *
     * In production you likely want:
     *   - idempotency enforcement on the *API* for this endpoint
@@ -86,44 +96,47 @@ final class WalletServiceLive(
       code: String
   ): IO[DomainError, LedgerTxId] =
 
-    (for {
-      wallet <- walletRepo.findById(userId, walletId)
+    for {
+      wallet     <- walletRepo.findById(userId, walletId)
       voucherOpt <- voucherRepo.find(code)
-      voucher <- ZIO
-        .fromOption(voucherOpt)
-        .mapError(_ => DomainError.NotFound("Voucher not found"))
+      voucher    <- ZIO
+                   .fromOption(voucherOpt)
+                   .mapError(_ => DomainError.NotFound("Voucher not found"))
       _ <- ZIO
-        .fail(DomainError.Validation("Voucher expired"))
-        .when(voucher.expiresAt.isBefore(Instant.now()))
+             .fail(DomainError.Validation("Voucher expired"))
+             .when(voucher.expiresAt.isBefore(Instant.now()))
       _ <- ZIO
-        .fail(DomainError.Conflict("Voucher already redeemed"))
-        .when(voucher.redeemedAt.isDefined)
+             .fail(DomainError.Conflict("Voucher already redeemed"))
+             .when(voucher.redeemedAt.isDefined)
       _ <- ZIO
-        .fail(
-          DomainError.Validation("Voucher asset does not match wallet asset")
-        )
-        .when(voucher.asset != wallet.asset.code)
+             .fail(
+               DomainError.Validation("Voucher asset does not match wallet asset")
+             )
+             .when(voucher.asset != wallet.asset.code)
 
       txId <- ledgerRepo.createTx(userId, kind = "KIOSK_VOUCHER_REDEEM")
-      _ <- ledgerRepo.addEntry(
-        txId,
-        walletId,
-        wallet.asset.code,
-        deltaMinor = voucher.amountMinor
-      )
+      _    <- ledgerRepo.addEntry(
+             txId,
+             walletId,
+             wallet.asset.code,
+             deltaMinor = voucher.amountMinor
+           )
 
       // Wallet optimistic update (bounded retry recommended)
       newBalance = wallet.balanceMinor + voucher.amountMinor
-      _ <- walletRepo.updateBalance(
-        walletId,
-        expectedVersion = wallet.version,
-        newBalanceMinor = newBalance
-      )
+      _         <- walletRepo.updateBalance(
+             walletId,
+             expectedVersion = wallet.version,
+             newBalanceMinor = newBalance
+           )
 
       _ <- voucherRepo.markRedeemed(code, userId.value, Instant.now())
-    } yield txId)
+    } yield txId
+
 }
+
 object WalletServiceLive {
+
   val layer: ZLayer[
     Quill.Postgres[SnakeCase] & WalletRepo & LedgerRepo & VoucherRepo,
     Nothing,

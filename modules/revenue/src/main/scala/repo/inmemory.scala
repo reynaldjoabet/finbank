@@ -10,6 +10,7 @@ object inmemory {
   final class InMemoryTaxpayerRepo private (
       data: Ref[Map[TaxpayerId, Taxpayer]]
   ) extends TaxpayerRepo {
+
     override def create(
         reg: TaxpayerRegistration,
         nowMs: Long,
@@ -27,18 +28,24 @@ object inmemory {
       )
       data.update(_ + (id -> tp)).as(tp)
     }
+
     override def get(id: TaxpayerId): IO[RepoError, Option[Taxpayer]] =
       data.get.map(_.get(id))
+
     override def list(): IO[RepoError, List[Taxpayer]] =
       data.get.map(_.values.toList)
+
   }
+
   object InMemoryTaxpayerRepo {
+
     val layer: ULayer[TaxpayerRepo] =
       ZLayer.fromZIO(
         Ref
           .make(Map.empty[TaxpayerId, Taxpayer])
           .map(new InMemoryTaxpayerRepo(_))
       )
+
   }
 
   final class InMemoryReturnRepo private (data: Ref[Map[ReturnId, TaxReturn]]) extends ReturnRepo {
@@ -135,19 +142,25 @@ object inmemory {
           .sortBy(_.updatedAtEpochMs)
           .reverse
       )
+
   }
+
   object InMemoryReturnRepo {
+
     val layer: ULayer[ReturnRepo] =
       ZLayer.fromZIO(
         Ref.make(Map.empty[ReturnId, TaxReturn]).map(new InMemoryReturnRepo(_))
       )
+
   }
 
   final class InMemoryRiskRuleRepo private (
       data: Ref[Map[RiskRuleId, RiskRule]]
   ) extends RiskRuleRepo {
+
     override def list(): IO[RepoError, List[RiskRule]] =
       data.get.map(_.values.toList)
+
     override def create(
         rule: RiskRule,
         nowMs: Long
@@ -155,6 +168,7 @@ object inmemory {
       val r = rule.copy(createdAtEpochMs = nowMs, updatedAtEpochMs = nowMs)
       data.update(_ + (r.id -> r)).as(r)
     }
+
     override def setEnabled(
         id: RiskRuleId,
         enabled: Boolean,
@@ -169,14 +183,18 @@ object inmemory {
         }
       }.flatten
     }
+
   }
+
   object InMemoryRiskRuleRepo {
+
     val layer: ULayer[RiskRuleRepo] =
       ZLayer.fromZIO(
         Ref
           .make(Map.empty[RiskRuleId, RiskRule])
           .map(new InMemoryRiskRuleRepo(_))
       )
+
   }
 
   final class InMemoryAssessmentRepo private (
@@ -215,8 +233,11 @@ object inmemory {
 
     override def updateLiability(liability: Liability): IO[RepoError, Unit] =
       liabilities.update(_ + (liability.id -> liability)).unit
+
   }
+
   object InMemoryAssessmentRepo {
+
     val layer: ULayer[AssessmentRepo] =
       ZLayer.fromZIO {
         for {
@@ -224,6 +245,7 @@ object inmemory {
           l <- Ref.make(Map.empty[LiabilityId, Liability])
         } yield new InMemoryAssessmentRepo(a, l)
       }
+
   }
 
   final class InMemoryPaymentRepo private (
@@ -258,8 +280,11 @@ object inmemory {
         paymentId: PaymentId
     ): IO[RepoError, Option[Receipt]] =
       receipts.get.map(_.get(paymentId))
+
   }
+
   object InMemoryPaymentRepo {
+
     val layer: ULayer[PaymentRepo] =
       ZLayer.fromZIO {
         for {
@@ -267,13 +292,18 @@ object inmemory {
           r <- Ref.make(Map.empty[PaymentId, Receipt])
         } yield new InMemoryPaymentRepo(p, r)
       }
+
   }
 
-  final class InMemoryRefundRepo private (data: Ref[Map[RefundId, RefundClaim]]) extends RefundRepo {
+  final class InMemoryRefundRepo private (data: Ref[Map[RefundId, RefundClaim]])
+      extends RefundRepo {
+
     override def create(claim: RefundClaim): IO[RepoError, RefundClaim] =
       data.update(_ + (claim.id -> claim)).as(claim)
+
     override def get(id: RefundId): IO[RepoError, Option[RefundClaim]] =
       data.get.map(_.get(id))
+
     override def listByTaxpayer(
         taxpayerId: TaxpayerId
     ): IO[RepoError, List[RefundClaim]] =
@@ -284,35 +314,47 @@ object inmemory {
           .sortBy(_.updatedAtEpochMs)
           .reverse
       )
+
     override def update(claim: RefundClaim): IO[RepoError, RefundClaim] =
       data.update(_ + (claim.id -> claim)).as(claim)
+
   }
+
   object InMemoryRefundRepo {
+
     val layer: ULayer[RefundRepo] =
       ZLayer.fromZIO(
         Ref
           .make(Map.empty[RefundId, RefundClaim])
           .map(new InMemoryRefundRepo(_))
       )
+
   }
 
   final class InMemoryObjectionRepo private (
       data: Ref[Map[ObjectionId, Objection]]
   ) extends ObjectionRepo {
+
     override def create(o: Objection): IO[RepoError, Objection] =
       data.update(_ + (o.id -> o)).as(o)
+
     override def get(id: ObjectionId): IO[RepoError, Option[Objection]] =
       data.get.map(_.get(id))
+
     override def update(o: Objection): IO[RepoError, Objection] =
       data.update(_ + (o.id -> o)).as(o)
+
   }
+
   object InMemoryObjectionRepo {
+
     val layer: ULayer[ObjectionRepo] =
       ZLayer.fromZIO(
         Ref
           .make(Map.empty[ObjectionId, Objection])
           .map(new InMemoryObjectionRepo(_))
       )
+
   }
 
   final class InMemoryCaseRepo private (
@@ -362,8 +404,11 @@ object inmemory {
 
     override def listNotes(caseId: CaseId): IO[RepoError, List[CaseNote]] =
       notes.get.map(_.getOrElse(caseId, Vector.empty).toList)
+
   }
+
   object InMemoryCaseRepo {
+
     val layer: ULayer[CaseRepo] =
       ZLayer.fromZIO {
         for {
@@ -372,6 +417,7 @@ object inmemory {
           n <- Ref.make(Map.empty[CaseId, Vector[CaseNote]])
         } yield new InMemoryCaseRepo(c, t, n)
       }
+
   }
 
   final class InMemoryDocumentRepo private (
@@ -388,6 +434,7 @@ object inmemory {
 
     override def getMeta(id: DocumentId): IO[RepoError, Option[DocumentMeta]] =
       metas.get.map(_.get(id))
+
     override def getBytes(id: DocumentId): IO[RepoError, Option[Chunk[Byte]]] =
       bytes.get.map(_.get(id))
 
@@ -400,8 +447,11 @@ object inmemory {
           .filter(m => m.entityType == entityType && m.entityId == entityId)
           .toList
       )
+
   }
+
   object InMemoryDocumentRepo {
+
     val layer: ULayer[DocumentRepo] =
       ZLayer.fromZIO {
         for {
@@ -409,28 +459,40 @@ object inmemory {
           b <- Ref.make(Map.empty[DocumentId, Chunk[Byte]])
         } yield new InMemoryDocumentRepo(m, b)
       }
+
   }
 
   final class InMemoryAuditRepo private (events: Ref[Vector[AuditEvent]]) extends AuditRepo {
+
     override def append(evt: AuditEvent): UIO[Unit] =
       events.update(_ :+ evt).unit
+
     override def latest(limit: Int): UIO[List[AuditEvent]] =
       events.get.map(_.takeRight(limit).toList.reverse)
+
   }
+
   object InMemoryAuditRepo {
+
     val layer: ULayer[AuditRepo] =
       ZLayer.fromZIO(
         Ref.make(Vector.empty[AuditEvent]).map(new InMemoryAuditRepo(_))
       )
+
   }
 
   final class InMemoryUserRepo private (users: Map[String, User]) extends UserRepo {
+
     override def findByUsername(username: String): IO[RepoError, Option[User]] =
       ZIO.succeed(users.get(username))
+
     override def get(id: UserId): IO[RepoError, Option[User]] =
       ZIO.succeed(users.values.find(_.id == id))
+
   }
+
   object InMemoryUserRepo {
+
     val layer: ULayer[UserRepo] = {
       // These hashes are placeholders; AuthService has a hasher utility for generating real ones.
       val admin =
@@ -447,18 +509,20 @@ object inmemory {
       ZLayer.succeed(
         new InMemoryUserRepo(
           Map(
-            admin.username -> admin,
-            officer.username -> officer,
+            admin.username    -> admin,
+            officer.username  -> officer,
             taxpayer.username -> taxpayer
           )
         )
       )
     }
+
   }
 
   final class InMemoryRefreshTokenRepo private (
       data: Ref[Map[RefreshTokenId, RefreshTokenRecord]]
   ) extends RefreshTokenRepo {
+
     override def create(
         r: RefreshTokenRecord
     ): IO[RepoError, RefreshTokenRecord] =
@@ -476,13 +540,18 @@ object inmemory {
           case Some(prev) => m.updated(id, prev.copy(revoked = true))
         }
       }.unit
+
   }
+
   object InMemoryRefreshTokenRepo {
+
     val layer: ULayer[RefreshTokenRepo] =
       ZLayer.fromZIO(
         Ref
           .make(Map.empty[RefreshTokenId, RefreshTokenRecord])
           .map(new InMemoryRefreshTokenRepo(_))
       )
+
   }
+
 }

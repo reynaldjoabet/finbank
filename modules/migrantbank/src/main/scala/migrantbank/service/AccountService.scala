@@ -1,17 +1,18 @@
 package migrantbank.service
 
-import migrantbank.db.Db
-import migrantbank.repo.AccountRepo
-import migrantbank.domain.*
-import zio.*
-
 import java.util.UUID
+
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.repo.AccountRepo
+import zio.*
 
 trait AccountService {
   def me(userId: UUID): IO[AppError, Account]
 }
 
 object AccountService {
+
   val live: ZLayer[Db, Nothing, AccountService] =
     ZLayer.fromFunction { (db: Db) =>
       new AccountService {
@@ -36,4 +37,5 @@ object AccountService {
           }
       }
     }
+
 }

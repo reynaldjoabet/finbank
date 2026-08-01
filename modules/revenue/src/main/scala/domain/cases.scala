@@ -6,6 +6,7 @@ import revenue.domain.ids.*
 enum CaseType derives JsonCodec, CanEqual {
   case Audit, Investigation, CustomsHold
 }
+
 enum CaseStatus derives JsonCodec, CanEqual {
   case Open, Assigned, InProgress, Closed
 }

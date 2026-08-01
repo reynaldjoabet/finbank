@@ -1,13 +1,15 @@
 package migrantbank.security
 
-import com.password4j.Password
-import com.password4j.Argon2Function
 import com.password4j.types.Argon2
+import com.password4j.Argon2Function
+import com.password4j.Password
 import zio.*
 
 trait PasswordHasher {
+
   def hash(raw: String): UIO[String]
   def verify(raw: String, hash: String): UIO[Boolean]
+
 }
 
 object PasswordHasher {
@@ -36,4 +38,5 @@ object PasswordHasher {
             }
       }
     }
+
 }

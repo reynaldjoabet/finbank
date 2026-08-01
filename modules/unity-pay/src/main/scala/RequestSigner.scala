@@ -1,18 +1,20 @@
 package unitypay
 
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 import java.util.Base64
+
+import javax.crypto.spec.SecretKeySpec
+import javax.crypto.Mac
 import sttp.client4._
 
 object RequestSigner {
 
-  /** Generates an HMAC-SHA256 signature for a JSON payload. Useful for webhook verification or high-security internal
-    * APIs.
+  /**
+    * Generates an HMAC-SHA256 signature for a JSON payload. Useful for webhook verification or
+    * high-security internal APIs.
     */
   def signBody(body: String, secret: String): String = {
     val hmacSha256 = Mac.getInstance("HmacSHA256")
-    val secretKey = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256")
+    val secretKey  = new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256")
     hmacSha256.init(secretKey)
 
     val hash = hmacSha256.doFinal(body.getBytes("UTF-8"))
@@ -28,4 +30,5 @@ object RequestSigner {
       .header("X-Unity-Signature", signature) // Your custom security header
       .body(payload)
   }
+
 }

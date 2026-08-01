@@ -1,7 +1,11 @@
 package revenue
-import zio._
+
 import java.io.IOException
+
+import zio._
+
 object Example extends ZIOAppDefault {
+
   // This is stack-safe in ZIO — 10 million flatMaps, no overflow:
   def loop(n: Int): ZIO[Any, IOException, Unit] =
     if (n <= 0) ZIO.unit
@@ -15,4 +19,5 @@ object Example extends ZIOAppDefault {
   // The runtime trampoline executes it one step at a time.
 
   override def run: ZIO[ZIOAppArgs & Scope, Any, Any] = loop(10000000)
+
 }

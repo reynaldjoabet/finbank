@@ -5,9 +5,11 @@ import zio.*
 import zio.stream.*
 
 trait PayoutService {
+
   def processBulk(
       requests: Chunk[PayoutRequest]
   ): Stream[Throwable, PayoutResult]
+
 }
 
 case class MaviancePayoutLive() extends PayoutService {
@@ -30,19 +32,20 @@ case class MaviancePayoutLive() extends PayoutService {
 
           // Simulate call to Maviance/Tranzak API
           res <- ZIO
-            .attempt {
-              // In a real app, use sttp/http4s here
-              PayoutResult(
-                reference = s"CM-${java.util.UUID.randomUUID()}",
-                status = "SUCCESS",
-                taxDeducted = tax
-              )
-            }
-            .retry(Schedule.exponential(1.second) && Schedule.recurs(3))
+                   .attempt {
+                     // In a real app, use sttp/http4s here
+                     PayoutResult(
+                       reference = s"CM-${java.util.UUID.randomUUID()}",
+                       status = "SUCCESS",
+                       taxDeducted = tax
+                     )
+                   }
+                   .retry(Schedule.exponential(1.second) && Schedule.recurs(3))
 
         } yield res
       }
   }
+
 }
 
 object MaviancePayout {

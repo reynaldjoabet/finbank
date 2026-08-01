@@ -1,21 +1,26 @@
 package coinstar.wallet.persistence
 
+import java.time.Instant
+
 import coinstar.wallet.domain.DomainError
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
 
-import java.time.Instant
-
 trait VoucherRepo {
+
   def find(code: String): IO[DomainError, Option[KioskVoucherRow]]
+
   def markRedeemed(
       code: String,
       userId: java.util.UUID,
       at: Instant
   ): IO[DomainError, Unit]
+
 }
+
 object VoucherRepo {
+
   def find(
       code: String
   ): ZIO[VoucherRepo, DomainError, Option[KioskVoucherRow]] =
@@ -27,8 +32,11 @@ object VoucherRepo {
       at: Instant
   ): ZIO[VoucherRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[VoucherRepo](_.markRedeemed(code, userId, at))
+
 }
+
 final class VoucherRepoLive(quill: Quill.Postgres[SnakeCase]) extends VoucherRepo {
+
   import quill.*
 
   private inline def vouchers = quote(
@@ -57,8 +65,12 @@ final class VoucherRepoLive(quill: Quill.Postgres[SnakeCase]) extends VoucherRep
         if updated == 1 then ZIO.unit
         else ZIO.fail(DomainError.Conflict("Voucher already redeemed"))
       }
+
 }
+
 object VoucherRepoLive {
+
   val layer: ZLayer[Quill.Postgres[SnakeCase], Nothing, VoucherRepo] =
     ZLayer.fromFunction(new VoucherRepoLive(_))
+
 }

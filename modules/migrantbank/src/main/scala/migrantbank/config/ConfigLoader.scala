@@ -28,4 +28,5 @@ object ConfigLoader {
   val secretKeyLayer: ZLayer[Any, Config.Error, String] = ZLayer.fromZIO(
     ZIO.config(Config.string("FLW_SECRET_KEY").withDefault("your_test_key"))
   )
+
 }

@@ -1,6 +1,8 @@
 package unitypay
+
 import sttp.client4.*
 object MonoClient {
+
   private val SecretKey = sys.env("MONO_SECRET_KEY")
 
   def fetchAccountData(accountId: String) = {
@@ -12,4 +14,5 @@ object MonoClient {
       ) // Mono specifically looks for this header
       .header("Content-Type", "application/json")
   }
+
 }

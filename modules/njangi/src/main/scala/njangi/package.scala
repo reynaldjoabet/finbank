@@ -1,31 +1,38 @@
-import java.util.UUID
 import java.time.Instant
+import java.util.UUID
 
 package object njangi {
 
   // Domain Identifiers
   opaque type UserId = UUID
   object UserId {
+
     def apply(uuid: UUID): UserId = uuid
     def unapply(id: UserId): UUID = id
-    def random: UserId = UUID.randomUUID()
+    def random: UserId            = UUID.randomUUID()
 
     given CanEqual[UserId, UserId] = CanEqual.derived
+
   }
   opaque type CircleId = UUID
   object CircleId {
+
     def apply(uuid: UUID): CircleId = uuid
     def unapply(id: CircleId): UUID = id
 
     given CanEqual[CircleId, CircleId] = CanEqual.derived
+
   }
 
   // Enums with parameters for Region-Specific logic
   enum Currency(val symbol: String) derives CanEqual {
-    case XAF extends Currency("FCFA")
-    case NGN extends Currency("₦")
+
+    case XAF  extends Currency("FCFA")
+    case NGN  extends Currency("₦")
     case USDC extends Currency("$")
+
   }
+
   case class User(
       id: UserId,
       fapiSubjectId: String,
@@ -37,16 +44,22 @@ package object njangi {
   sealed trait SettlementCapability
 
   enum SettlementRail(val latencyMillis: Long) extends SettlementCapability derives CanEqual {
-    case Gimac extends SettlementRail(2000)
-    case Papss extends SettlementRail(5000)
+
+    case Gimac       extends SettlementRail(2000)
+    case Papss       extends SettlementRail(5000)
     case StellarUsdc extends SettlementRail(500)
-    case Internal extends SettlementRail(50)
+    case Internal    extends SettlementRail(50)
+
   }
+
   enum PaymentMethod derives CanEqual {
+
     case MobileMoney(provider: String) // e.g., "Orange", "MTN"
     case BankTransfer(bankCode: String)
     case CryptoWallet(chain: String)
+
   }
+
   case class Transaction(
       id: UUID,
       userId: UserId,
@@ -59,12 +72,15 @@ package object njangi {
 
   // Extending the domain with business logic
   extension (circle: NjangiCircle) {
+
     def isHighValue: Boolean =
       circle.contributionAmount > 500000 && circle.currency == Currency.XAF
 
     def generateVaultAddress(userId: UserId): String =
       s"vault-${circle.id.toString.take(8)}-${userId.toString.take(8)}"
+
   }
+
   case class Bid(userId: UserId, discount: Double)
   case class AuctionResult(winner: UserId, finalPot: BigDecimal)
   case class NoBids(reason: String)
@@ -72,6 +88,7 @@ package object njangi {
   type PayoutOutcome = AuctionResult | NoBids
 
   object AuctionEngine {
+
     def resolve(bids: List[Bid], pot: BigDecimal): PayoutOutcome =
       bids.maxByOption(_.discount) match {
         case Some(winningBid) =>
@@ -79,6 +96,7 @@ package object njangi {
         case None =>
           NoBids("No participants in this rotation cycle")
       }
+
   }
 
   // The current state of a member's participation
@@ -94,7 +112,7 @@ package object njangi {
   case class Member(
       id: UUID,
       name: String,
-      momoNumber: String, // Orange/MTN Cameroon
+      momoNumber: String,    // Orange/MTN Cameroon
       socialTrustScore: Int, // Calculated based on past performance
       status: ParticipationStatus
   )
@@ -109,6 +127,7 @@ package object njangi {
       payoutOrder: List[UUID], // The "Turn" order
       totalPot: BigDecimal
   )
+
   case class NjangiCircle(
       id: UUID,
       name: String,

@@ -3,7 +3,9 @@ import zio.*
 import domain.*
 import services.PayoutService
 import zio.stream.ZStream
+
 object PayoutWorker {
+
   def start: ZIO[PayoutService, Throwable, Unit] = {
     val pendingPayments = Chunk(
       PayoutRequest("+237671234567", 50000, "Salary Jan"),
@@ -12,10 +14,11 @@ object PayoutWorker {
 
     for {
       service <- ZIO.service[PayoutService]
-      _ <- ZStream
-        .tick(5.minutes) // Run every 5 minutes
-        .mapZIO(_ => service.processBulk(pendingPayments).runCollect)
-        .runDrain
+      _       <- ZStream
+             .tick(5.minutes) // Run every 5 minutes
+             .mapZIO(_ => service.processBulk(pendingPayments).runCollect)
+             .runDrain
     } yield ()
   }
+
 }

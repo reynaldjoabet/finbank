@@ -25,20 +25,26 @@ final case class ProviderWebhook(
 )
 
 trait MobileMoneyClient {
+
   def provider: Provider
 
   def initiatePayment(
       req: InitiatePaymentRequest
   ): IO[AppError, InitiatePaymentResponse]
 
-  /** Optional but useful for reconciliation backfills. */
+  /**
+    * Optional but useful for reconciliation backfills.
+    */
   def queryStatus(externalRef: String): IO[AppError, String]
 
-  /** Verify webhook authenticity (HMAC/signature header, etc). */
+  /**
+    * Verify webhook authenticity (HMAC/signature header, etc).
+    */
   def verifyWebhook(
       headers: Map[String, String],
       rawBody: String
   ): IO[AppError, Unit]
 
   def parseWebhook(rawBody: String): IO[AppError, ProviderWebhook]
+
 }

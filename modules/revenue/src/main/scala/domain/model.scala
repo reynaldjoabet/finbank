@@ -16,8 +16,10 @@ final case class Principal(
 enum TaxpayerKind derives JsonCodec, CanEqual { case Individual, Business }
 
 enum TaxType derives JsonCodec, CanEqual {
+
   case IncomeTax, VAT, Payroll_PAYE_CSG_NSF, CustomsDuty, Excise, GamblingTax,
     Levy
+
 }
 
 final case class Period(year: Int, month: Option[Int]) derives JsonCodec
@@ -120,6 +122,7 @@ final case class LiabilityRecalcResult(
 enum PaymentMethod derives JsonCodec, CanEqual {
   case DirectDebit, Card, BankTransfer
 }
+
 enum PaymentStatus derives JsonCodec, CanEqual { case Pending, Settled, Failed }
 
 final case class PaymentIntentCreate(
@@ -223,7 +226,7 @@ final case class RiskRule(
     name: String,
     enabled: Boolean,
     taxTypes: Option[List[TaxType]],
-    jsonField: String, // e.g. "declaredAmount"
+    jsonField: String,     // e.g. "declaredAmount"
     threshold: BigDecimal, // e.g. 5000000
     caseType: CaseType,
     caseReason: String,

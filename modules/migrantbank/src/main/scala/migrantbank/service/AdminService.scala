@@ -1,28 +1,34 @@
 package migrantbank.service
 
+import java.util.UUID
+
 import com.augustnagro.magnum.*
 import migrantbank.db.Db
 import migrantbank.domain.*
 import migrantbank.repo.*
 import zio.*
 import zio.json.*
-import java.util.UUID
 
 trait AdminService {
+
   def pendingKyc(): IO[AppError, List[User]]
+
   def setKyc(
       userId: UUID,
       status: KycStatus,
       correlationId: String
   ): IO[AppError, Unit]
+
   def updateCardDelivery(
       cardId: UUID,
       status: DeliveryStatus,
       correlationId: String
   ): IO[AppError, Unit]
+
   def analytics(): IO[AppError, AdminService.Analytics]
   def audit(limit: Int): IO[AppError, List[AuditEvent]]
   def flaggedTransfers(limit: Int): IO[AppError, List[Transfer]]
+
 }
 
 object AdminService {
@@ -92,7 +98,7 @@ object AdminService {
 
         override def analytics(): IO[AppError, Analytics] =
           db.query {
-            val users = sql"SELECT COUNT(*) FROM users".query[Long].run().head
+            val users     = sql"SELECT COUNT(*) FROM users".query[Long].run().head
             val transfers =
               sql"SELECT COUNT(*) FROM transfers".query[Long].run().head
             val vol = sql"SELECT COALESCE(SUM(amount_minor),0) FROM transfers"
@@ -114,12 +120,13 @@ object AdminService {
           }
 
         override def audit(limit: Int): IO[AppError, List[AuditEvent]] =
-          db.query { AuditRepo.listLatest(limit) }
+          db.query(AuditRepo.listLatest(limit))
 
         override def flaggedTransfers(
             limit: Int
         ): IO[AppError, List[Transfer]] =
-          db.query { TransferRepo.listFlagged(limit) }
+          db.query(TransferRepo.listFlagged(limit))
       }
     }
+
 }

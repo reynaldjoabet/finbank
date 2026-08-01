@@ -1,4 +1,5 @@
 package revenue.api
+
 import zio.*
 import zio.http.*
 import revenue.domain.*
@@ -22,8 +23,8 @@ object HttpAuth {
   def principal(req: Request): ZIO[AuthService, ApiError, Principal] = {
     for {
       token <- bearer(req)
-      auth <- ZIO.service[AuthService]
-      p <- auth.authenticateAccessToken(token)
+      auth  <- ZIO.service[AuthService]
+      p     <- auth.authenticateAccessToken(token)
     } yield p
   }
 
@@ -34,4 +35,5 @@ object HttpAuth {
       .unless(ok)
       .unit
   }
+
 }

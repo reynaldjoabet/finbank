@@ -3,6 +3,7 @@ package tontine
 import zio.*
 
 trait DisputeRepo {
+
   def create(d: Dispute): UIO[Unit]
   def get(id: DisputeId): IO[AppError.NotFound, Dispute]
   def byCircle(circleId: CircleId): UIO[List[Dispute]]
@@ -11,6 +12,7 @@ trait DisputeRepo {
 
   def createPenalty(p: Penalty): UIO[Unit]
   def penaltiesByMember(memberId: MemberId): UIO[List[Penalty]]
+
 }
 
 final case class DisputeRepoLive(
@@ -46,9 +48,11 @@ final case class DisputeRepoLive(
 
   override def penaltiesByMember(memberId: MemberId): UIO[List[Penalty]] =
     penalties.get.map(_.values.filter(_.memberId == memberId).toList)
+
 }
 
 object DisputeRepo {
+
   val layer: ULayer[DisputeRepo] =
     ZLayer.fromZIO {
       for {
@@ -56,4 +60,5 @@ object DisputeRepo {
         ps <- Ref.make(Map.empty[PenaltyId, Penalty])
       } yield DisputeRepoLive(ds, ps)
     }
+
 }

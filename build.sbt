@@ -1,7 +1,7 @@
 import Dependencies.*
 
 ThisBuild / scalaVersion := "3.8.4"
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version      := "0.1.0-SNAPSHOT"
 
 ThisBuild / dependencyOverrides ++= Seq(
   zioJson
@@ -19,7 +19,7 @@ ThisBuild / scalacOptions := Seq(
   "-Werror",
   "-Wvalue-discard",
   "-Wnonunit-statement",
-  "-Xlint:all",
+  "-Wshadow:all",
   "-Xcheck-macros",
   "-Xmax-inlines:64"
 )
@@ -84,69 +84,38 @@ val dbDependencies = Seq(
 // Shared by both OpenAPI client modules. The only differences between them are
 // the project name and base directory, so the wiring lives in one place.
 lazy val codegenSettings = Seq(
-  openApiModelNamePrefix := "",
-  openApiModelNameSuffix := "",
-  openApiSkipOverwrite := Some(false),
+  openApiModelNamePrefix         := "",
+  openApiModelNameSuffix         := "",
+  openApiSkipOverwrite           := Some(false),
   openApiRemoveOperationIdPrefix := Some(true),
-  openApiGenerateMetadata := SettingDisabled,
+  openApiGenerateMetadata        := SettingDisabled,
   // Use the same JSON so CLI and SBT stay in sync
   openApiConfigFile := ((Compile / baseDirectory).value / "config.json").getPath,
   // Shared ignore file lives one level up, in modules/ -- i.e. each module's
   // parent dir. getParentFile keeps the path normalized (no literal /../).
   openApiIgnoreFileOverride := (baseDirectory.value.getParentFile / ".openapi-generator-ignore").getPath,
   // Put generated sources where SBT expects managed sources
-  openApiOutputDir := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
+  openApiOutputDir          := ((Compile / baseDirectory).value / "src/main/scala").getAbsolutePath,
   openApiGenerateModelTests := SettingDisabled,
-  openApiGenerateApiTests := SettingDisabled,
+  openApiGenerateApiTests   := SettingDisabled,
   // Fail fast on bad specs
   openApiValidateSpec := Some(true),
 
-  // (Re)generate the client. Must stay uncached: sbt 2 caches `:=` task results
-  // by default, but the cache key is built from the task's `.value` inputs, and
-  // nothing here hashes the OpenAPI spec's *contents* -- sbt's own file-input
-  // keys (allInputFiles / changedInputFiles) are @transient, i.e. deliberately
-  // excluded from cache input. A Def.cachedTask would therefore keep serving a
-  // stale client whenever the spec changed, so we always regenerate.
-  //
-  // openApiGenerate returns the exact Seq[File] it just wrote, so `generate`
-  // (typed Seq[File], see Dependencies.scala) forwards that straight through --
-  // no re-globbing of the output directory, which would also pick up stale
-  // files left by a previous run that the current spec no longer produces. No
-  // .scala filter is needed here: the .openapi-generator-ignore (see
-  // openApiIgnoreFileOverride above) already keeps everything but Scala sources
-  // out of the output dir, so every file returned is a compilation unit.
   generate := Def.uncached {
     openApiGenerate.value
   },
-  // Wired in as a sourceGenerator, NOT as `compile.dependsOn(generate)`.
-  // sbt collects `sources` by globbing src/main/scala in a task separate from
-  // `compile`, and dependsOn only sequences generate ahead of `compile` -- not
-  // ahead of that glob. So on a clean checkout the glob ran first, found
-  // nothing, and codegen compiled 0 sources. A sourceGenerator feeds `sources`
-  // directly, so sbt has to run it before compiling. Because `generate` is
-  // already typed Seq[File], its own return value is what sourceGenerators
-  // needs -- no wrapping Def.task/glob required.
+
   Compile / sourceGenerators += generate.taskValue,
-  // Generated output lands directly in src/main/scala (see openApiOutputDir
-  // above), so drop the unmanaged source dir -- otherwise the same files get
-  // compiled twice, once via the sourceGenerator and once via the default glob.
+
   Compile / unmanagedSourceDirectories := Seq.empty,
-  libraryDependencies ++= Seq(
+  libraryDependencies                 ++= Seq(
     sttpJsoniter,
     jsoniter,
     jsoniterMacros,
     jsoniterCirce
-  ),
-  // Generated sources don't carry CanEqual givens for their enums, so
-  // -language:strictEquality would fail here. Keep -release so the emitted
-  // bytecode still matches the rest of the build.
-  scalacOptions := Seq("-release:17")
+  )
 )
 
-/** Defines an OpenAPI client module named `id`, rooted at `modules/<id>`. Everything specific to the module -- input
-  * spec, api/model packages, output dir -- lives in that directory's config.json (see codegenSettings), so the project
-  * id is the only thing that varies between modules.
-  */
 def codegenModule(id: String): Project =
   Project(id, file(s"modules/$id"))
     .enablePlugins(OpenApiGeneratorPlugin)
@@ -154,7 +123,7 @@ def codegenModule(id: String): Project =
     .settings(name := id)
     .settings(scalacOptions := generatedScalacOptions)
 
-lazy val paymentInitiationCodegen = codegenModule("payment-initiation-codegen")
+lazy val paymentInitiationCodegen  = codegenModule("payment-initiation-codegen")
 lazy val accountInformationCodegen = codegenModule("account-information-codegen")
 
 lazy val codegenModules: Seq[Project] =
@@ -162,7 +131,7 @@ lazy val codegenModules: Seq[Project] =
 
 lazy val root = (project in file("."))
   .settings(
-    name := "finbank",
+    name                 := "finbank",
     libraryDependencies ++= commonDependencies ++ Seq(
       circeCore,
       circeGeneric,
@@ -192,31 +161,31 @@ lazy val root = (project in file("."))
 
 lazy val unityPay = (project in file("modules/unity-pay"))
   .settings(
-    name := "unity-pay",
+    name                 := "unity-pay",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val njangi = (project in file("modules/njangi"))
   .settings(
-    name := "njangi",
+    name                 := "njangi",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val billing = (project in file("modules/billing"))
   .settings(
-    name := "billing",
+    name                 := "billing",
     libraryDependencies ++= commonDependencies
   )
 
 lazy val coinstar = (project in file("modules/coinstar"))
   .settings(
-    name := "coinstar",
+    name                 := "coinstar",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
 lazy val migrantbank = (project in file("modules/migrantbank"))
   .settings(
-    name := "migrantbank",
+    name                 := "migrantbank",
     libraryDependencies ++= commonDependencies ++ dbDependencies ++ Seq(
       auth0
     )
@@ -224,12 +193,12 @@ lazy val migrantbank = (project in file("modules/migrantbank"))
 
 lazy val wallet = (project in file("modules/wallet"))
   .settings(
-    name := "wallet",
+    name                 := "wallet",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )
 
 lazy val revenue = (project in file("modules/revenue"))
   .settings(
-    name := "revenue",
+    name                 := "revenue",
     libraryDependencies ++= commonDependencies ++ dbDependencies
   )

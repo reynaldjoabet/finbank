@@ -4,13 +4,16 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.{ConfiguredJsonValueCodec, J
 given JsonValueCodec[List[Permission]] = JsonCodecMaker.make
 
 enum ResourceType derives ConfiguredJsonValueCodec, CanEqual {
+
   case USER
   case ROLE
   case OTHER
   case UNIVERSE
+
 }
 
 enum Action derives ConfiguredJsonValueCodec, CanEqual {
+
   case CREATE
   case READ
   case UPDATE_ROLE_BINDINGS
@@ -22,6 +25,7 @@ enum Action derives ConfiguredJsonValueCodec, CanEqual {
   case BACKUP_RESTORE
   case XCLUSTER
   case SUPER_ADMIN_ACTIONS
+
 }
 
 final case class PrerequisitePermission(
@@ -39,6 +43,7 @@ final case class Permission(
 ) derives ConfiguredJsonValueCodec
 
 object Permission {
+
   val ViewProfile = Permission(
     resourceType = ResourceType.USER,
     action = Action.READ,
@@ -524,12 +529,12 @@ object Permission {
       resourceType = ResourceType.UNIVERSE,
       action = Action.DEBUG,
       name = "Debug Universe",
-      description =
-        "Allows user to Debug a universe. User can create support bundles, reset slow queries, run perf advisor, etc.",
+      description = "Allows user to Debug a universe. User can create support bundles, reset slow queries, run perf advisor, etc.",
       permissionValidOnResource = true,
       prerequisitePermissions = Set(
         PrerequisitePermission(ResourceType.UNIVERSE, Action.READ)
       )
     )
   )
+
 }

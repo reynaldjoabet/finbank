@@ -1,11 +1,11 @@
 //package billing
 
+import java.time.Instant
+
 import zio.*
 import zio.http.*
 import zio.json.*
 import zio.stream.*
-
-import java.time.Instant
 
 // =======================
 // Domain (pure)
@@ -48,11 +48,14 @@ final case class Business(
 )
 
 sealed trait BillingError extends Throwable {
+
   def msg: String
   override def getMessage(): String = msg
+
 }
 
 object BillingError {
+
   final case class NotFound(entity: String, id: String) extends BillingError {
     val msg: String = s"$entity not found: $id"
   }
@@ -68,24 +71,31 @@ object BillingError {
   final case class Integration(vendor: String, reason: String) extends BillingError {
     val msg: String = s"Integration[$vendor]: $reason"
   }
+
 }
 
 sealed trait BillingEvent derives JsonEncoder {
   def at: Instant
 }
+
 object BillingEvent {
+
   final case class InvoiceIssued(invoiceId: String, at: Instant) extends BillingEvent
+
   final case class PaymentInitiated(
       paymentId: String,
       invoiceId: String,
       at: Instant
   ) extends BillingEvent
+
   final case class PaymentSettled(
       paymentId: String,
       invoiceId: String,
       at: Instant
   ) extends BillingEvent
+
   final case class KybSubmitted(businessId: String, at: Instant) extends BillingEvent
+
 }
 
 // =======================
@@ -99,6 +109,7 @@ final case class AppConfig(
 )
 
 object AppConfig {
+
   val live: ZLayer[Any, Nothing, AppConfig] =
     ZLayer.succeed(
       AppConfig(
@@ -107,6 +118,7 @@ object AppConfig {
         reconciliationInterval = 20.seconds
       )
     )
+
 }
 
 // =======================
@@ -121,6 +133,7 @@ final case class InvoiceStore(
 )
 
 object InvoiceStore {
+
   val inMemory: ZLayer[Any, Nothing, InvoiceStore] =
     ZLayer.fromZIO {
       Ref.make(Map.empty[String, Invoice]).map { ref =>
@@ -137,6 +150,7 @@ object InvoiceStore {
         )
       }
     }
+
 }
 
 final case class PaymentStore(
@@ -148,6 +162,7 @@ final case class PaymentStore(
 )
 
 object PaymentStore {
+
   val inMemory: ZLayer[Any, Nothing, PaymentStore] =
     ZLayer.fromZIO {
       Ref.make(Map.empty[String, Payment]).map { ref =>
@@ -173,6 +188,7 @@ object PaymentStore {
         )
       }
     }
+
 }
 
 final case class BusinessStore(
@@ -182,6 +198,7 @@ final case class BusinessStore(
 )
 
 object BusinessStore {
+
   val inMemory: ZLayer[Any, Nothing, BusinessStore] =
     ZLayer.fromZIO {
       Ref.make(Map.empty[String, Business]).map { ref =>
@@ -198,12 +215,14 @@ object BusinessStore {
         )
       }
     }
+
 }
 
-/** Best-practice idempotency:
+/**
+  * Best-practice idempotency:
   *   - Store key -> paymentId mapping so retries return the same paymentId.
-  *   - If vendor call fails, keep the mapping and mark payment failed. To retry safely, clients should use a NEW
-  *     idempotency key.
+  *   - If vendor call fails, keep the mapping and mark payment failed. To retry safely, clients
+  *     should use a NEW idempotency key.
   */
 final case class IdempotencyStore(
     get: String => UIO[Option[String]],
@@ -211,6 +230,7 @@ final case class IdempotencyStore(
 )
 
 object IdempotencyStore {
+
   val inMemory: ZLayer[Any, Nothing, IdempotencyStore] =
     ZLayer.fromZIO {
       Ref.make(Map.empty[String, String]).map { ref =>
@@ -220,11 +240,14 @@ object IdempotencyStore {
         )
       }
     }
+
 }
 
-/** Event pipeline with fan-out:
+/**
+  * Event pipeline with fan-out:
   *   - Business logic calls Events.emit(event) (fast, non-blocking)
-  *   - A scoped publisher fiber moves events from an internal queue into a hub (multi-subscriber stream)
+  *   - A scoped publisher fiber moves events from an internal queue into a hub (multi-subscriber
+  *     stream)
   */
 final case class Events(
     emit: BillingEvent => UIO[Unit],
@@ -232,22 +255,24 @@ final case class Events(
 )
 
 object Events {
+
   val live: ZLayer[Any, Nothing, Events] =
     ZLayer.scoped {
       for {
         queue <- Queue.unbounded[BillingEvent]
-        hub <- Hub.unbounded[BillingEvent]
-        _ <- (queue.take
-          .flatMap { ev =>
-            hub.publish(ev).unit
-          })
-          .forever
-          .forkScoped
+        hub   <- Hub.unbounded[BillingEvent]
+        _     <- queue.take
+               .flatMap { ev =>
+                 hub.publish(ev).unit
+               }
+               .forever
+               .forkScoped
       } yield Events(
         emit = (ev: BillingEvent) => queue.offer(ev).unit,
         stream = ZStream.fromHub(hub)
       )
     }
+
 }
 
 // =======================
@@ -260,13 +285,16 @@ final case class PaymentProcessor(
 )
 
 object PaymentProcessor {
+
   val stub: ZLayer[Any, Nothing, PaymentProcessor] =
     ZLayer.succeed {
       PaymentProcessor(
-        chargeAch = (inv: Invoice, idemKey: String) => ZIO.succeed(s"dwolla-ref-${inv.id}-${idemKey.take(10)}"),
+        chargeAch = (inv: Invoice, idemKey: String) =>
+          ZIO.succeed(s"dwolla-ref-${inv.id}-${idemKey.take(10)}"),
         settlementStatus = (_: String) => ZIO.succeed(PaymentStatus.Settled)
       )
     }
+
 }
 
 final case class Kyb(
@@ -274,12 +302,14 @@ final case class Kyb(
 )
 
 object Kyb {
+
   val stub: ZLayer[Any, Nothing, Kyb] =
     ZLayer.succeed {
       Kyb(
         submit = (b: Business) => ZIO.logInfo(s"[KYB] submitted ${b.id}").unit
       )
     }
+
 }
 
 final case class Accounting(
@@ -288,6 +318,7 @@ final case class Accounting(
 )
 
 object Accounting {
+
   val stub: ZLayer[Any, Nothing, Accounting] =
     ZLayer.succeed {
       Accounting(
@@ -295,6 +326,7 @@ object Accounting {
         recordPayment = (pay: Payment) => ZIO.logInfo(s"[ACCT] record payment ${pay.id}").unit
       )
     }
+
 }
 
 final case class Email(
@@ -302,12 +334,14 @@ final case class Email(
 )
 
 object Email {
+
   val stub: ZLayer[Any, Nothing, Email] =
     ZLayer.succeed {
       Email(
         sendInvoiceIssued = (inv: Invoice) => ZIO.logInfo(s"[EMAIL] invoice issued ${inv.id}").unit
       )
     }
+
 }
 
 final case class Webhooks(
@@ -315,12 +349,15 @@ final case class Webhooks(
 )
 
 object Webhooks {
+
   val stub: ZLayer[Any, Nothing, Webhooks] =
     ZLayer.succeed {
       Webhooks(
-        postEvent = (url: String, payload: String) => ZIO.logInfo(s"[WEBHOOK] POST $url payload=$payload").unit
+        postEvent = (url: String, payload: String) =>
+          ZIO.logInfo(s"[WEBHOOK] POST $url payload=$payload").unit
       )
     }
+
 }
 
 // =======================
@@ -341,8 +378,8 @@ object Billing {
     (Schedule.exponential(200.millis) && Schedule.recurs(5)).jittered
 
   val live: ZLayer[
-    InvoiceStore & PaymentStore & BusinessStore & IdempotencyStore & PaymentProcessor & Kyb & Email & Events &
-      AppConfig,
+    InvoiceStore & PaymentStore & BusinessStore & IdempotencyStore & PaymentProcessor & Kyb &
+      Email & Events & AppConfig,
     Nothing,
     Billing
   ] =
@@ -363,17 +400,17 @@ object Billing {
             ZIO.logSpan("issueInvoice") {
               for {
                 now <- Clock.instant
-                id <- Random.nextUUID.map(_.toString)
-                inv = Invoice(id, customerId, money, InvoiceStatus.Issued, now)
-                _ <- invoiceStore.create(inv)
+                id  <- Random.nextUUID.map(_.toString)
+                inv  = Invoice(id, customerId, money, InvoiceStatus.Issued, now)
+                _   <- invoiceStore.create(inv)
                 // best practice: side effects should not block the core transaction; treat as best-effort
                 _ <- email
-                  .sendInvoiceIssued(inv)
-                  .timeoutFail(BillingError.Integration("email", "timeout"))(
-                    cfg.vendorTimeout
-                  )
-                  .either
-                  .unit
+                       .sendInvoiceIssued(inv)
+                       .timeoutFail(BillingError.Integration("email", "timeout"))(
+                         cfg.vendorTimeout
+                       )
+                       .either
+                       .unit
                 _ <- events.emit(BillingEvent.InvoiceIssued(id, now))
               } yield id
             },
@@ -382,55 +419,55 @@ object Billing {
             ZIO.logSpan("initiateAchPayment") {
               for {
                 existing <- idem.get(idempotencyKey)
-                result <- existing match {
-                  case Some(paymentId) =>
-                    ZIO.succeed(paymentId)
+                result   <- existing match {
+                            case Some(paymentId) =>
+                              ZIO.succeed(paymentId)
 
-                  case None =>
-                    for {
-                      invOpt <- invoiceStore.get(invoiceId)
-                      inv <- ZIO
-                        .fromOption(invOpt)
-                        .orElseFail(BillingError.NotFound("Invoice", invoiceId))
+                            case None =>
+                              for {
+                                invOpt <- invoiceStore.get(invoiceId)
+                                inv    <- ZIO
+                                         .fromOption(invOpt)
+                                         .orElseFail(BillingError.NotFound("Invoice", invoiceId))
 
-                      _ <- ZIO
-                        .fail(BillingError.Conflict("Invoice already paid"))
-                        .when(inv.status == InvoiceStatus.Paid)
+                                _ <- ZIO
+                                       .fail(BillingError.Conflict("Invoice already paid"))
+                                       .when(inv.status == InvoiceStatus.Paid)
 
-                      now <- Clock.instant
-                      paymentId <- Random.nextUUID.map(_.toString)
+                                now       <- Clock.instant
+                                paymentId <- Random.nextUUID.map(_.toString)
 
-                      // idempotency first: reserve key -> paymentId & persist a pending record
-                      _ <- idem.put(idempotencyKey, paymentId)
-                      _ <- paymentStore.create(
-                        Payment(
-                          id = paymentId,
-                          invoiceId = invoiceId,
-                          processorRef = None,
-                          status = PaymentStatus.Pending,
-                          createdAt = now
-                        )
-                      )
+                                // idempotency first: reserve key -> paymentId & persist a pending record
+                                _ <- idem.put(idempotencyKey, paymentId)
+                                _ <- paymentStore.create(
+                                       Payment(
+                                         id = paymentId,
+                                         invoiceId = invoiceId,
+                                         processorRef = None,
+                                         status = PaymentStatus.Pending,
+                                         createdAt = now
+                                       )
+                                     )
 
-                      // vendor call: timeout + retry with backoff/jitter
-                      ref <- processor
-                        .chargeAch(inv, idempotencyKey)
-                        .timeoutFail(
-                          BillingError.Integration("payments", "timeout")
-                        )(cfg.vendorTimeout)
-                        .retry(vendorRetry)
-                        .tapError(e =>
-                          ZIO.logWarning(
-                            s"Payment initiation failed: ${e.getMessage}"
-                          )
-                        )
+                                // vendor call: timeout + retry with backoff/jitter
+                                ref <- processor
+                                         .chargeAch(inv, idempotencyKey)
+                                         .timeoutFail(
+                                           BillingError.Integration("payments", "timeout")
+                                         )(cfg.vendorTimeout)
+                                         .retry(vendorRetry)
+                                         .tapError(e =>
+                                           ZIO.logWarning(
+                                             s"Payment initiation failed: ${e.getMessage}"
+                                           )
+                                         )
 
-                      _ <- paymentStore.updateProcessorRef(paymentId, ref)
-                      _ <- events.emit(
-                        BillingEvent.PaymentInitiated(paymentId, invoiceId, now)
-                      )
-                    } yield paymentId
-                }
+                                _ <- paymentStore.updateProcessorRef(paymentId, ref)
+                                _ <- events.emit(
+                                       BillingEvent.PaymentInitiated(paymentId, invoiceId, now)
+                                     )
+                              } yield paymentId
+                          }
               } yield result
             },
 
@@ -438,14 +475,14 @@ object Billing {
             ZIO.logSpan("submitKyb") {
               for {
                 now <- Clock.instant
-                b = Business(businessId, legalName, KybStatus.Submitted)
-                _ <- businessStore.upsert(b)
-                _ <- kyb
-                  .submit(b)
-                  .timeoutFail(BillingError.Integration("kyb", "timeout"))(
-                    cfg.vendorTimeout
-                  )
-                  .retry(vendorRetry)
+                b    = Business(businessId, legalName, KybStatus.Submitted)
+                _   <- businessStore.upsert(b)
+                _   <- kyb
+                       .submit(b)
+                       .timeoutFail(BillingError.Integration("kyb", "timeout"))(
+                         cfg.vendorTimeout
+                       )
+                       .retry(vendorRetry)
                 _ <- events.emit(BillingEvent.KybSubmitted(businessId, now))
               } yield ()
             },
@@ -468,6 +505,7 @@ object Billing {
               .map(_.status)
         )
     }
+
 }
 
 // =======================
@@ -491,18 +529,18 @@ object Workers {
           case BillingEvent.InvoiceIssued(invoiceId, _) =>
             for {
               invOpt <- ZIO.serviceWithZIO[InvoiceStore](_.get(invoiceId))
-              inv <- ZIO
-                .fromOption(invOpt)
-                .orElseFail(BillingError.NotFound("Invoice", invoiceId))
+              inv    <- ZIO
+                       .fromOption(invOpt)
+                       .orElseFail(BillingError.NotFound("Invoice", invoiceId))
               _ <- ZIO.serviceWithZIO[Accounting](_.upsertInvoice(inv))
             } yield ()
 
           case BillingEvent.PaymentSettled(paymentId, _, _) =>
             for {
               payOpt <- ZIO.serviceWithZIO[PaymentStore](_.get(paymentId))
-              pay <- ZIO
-                .fromOption(payOpt)
-                .orElseFail(BillingError.NotFound("Payment", paymentId))
+              pay    <- ZIO
+                       .fromOption(payOpt)
+                       .orElseFail(BillingError.NotFound("Payment", paymentId))
               _ <- ZIO.serviceWithZIO[Accounting](_.recordPayment(pay))
             } yield ()
 
@@ -522,18 +560,19 @@ object Workers {
         val payload = ev.toJson // small JSON encoder below
         for {
           cfg <- ZIO.service[AppConfig]
-          _ <- ZIO.foreachDiscard(cfg.webhookDestinations) { url =>
-            ZIO
-              .serviceWithZIO[Webhooks](_.postEvent(url, payload))
-              .retry(retry5)
-              .catchAll(e => ZIO.logWarning(s"[WEBHOOK] failed for $url: ${e.getMessage}"))
-          }
+          _   <- ZIO.foreachDiscard(cfg.webhookDestinations) { url =>
+                 ZIO
+                   .serviceWithZIO[Webhooks](_.postEvent(url, payload))
+                   .retry(retry5)
+                   .catchAll(e => ZIO.logWarning(s"[WEBHOOK] failed for $url: ${e.getMessage}"))
+               }
         } yield ()
       }
       .runDrain
   }
 
-  /** Reconciliation worker:
+  /**
+    * Reconciliation worker:
     *   - polls pending payments
     *   - checks settlement status with processor
     *   - updates payment + invoice
@@ -542,53 +581,54 @@ object Workers {
   def reconciliation = {
     val tick =
       for {
-        cfg <- ZIO.service[AppConfig]
+        cfg     <- ZIO.service[AppConfig]
         pending <- ZIO.serviceWithZIO[PaymentStore](
-          _.listByStatus(PaymentStatus.Pending)
-        )
+                     _.listByStatus(PaymentStatus.Pending)
+                   )
         _ <- ZIO.foreachDiscard(pending) { p =>
-          p.processorRef match {
-            case None =>
-              ZIO.unit // not initiated yet (should be rare)
-            case Some(ref) =>
-              (for {
-                st <- ZIO
-                  .serviceWithZIO[PaymentProcessor](_.settlementStatus(ref))
-                  .retry(retry5)
-                _ <- st match {
-                  case PaymentStatus.Settled =>
-                    for {
-                      now <- Clock.instant
-                      _ <- ZIO.serviceWithZIO[PaymentStore](
-                        _.updateStatus(p.id, PaymentStatus.Settled)
-                      )
-                      _ <- ZIO.serviceWithZIO[InvoiceStore](
-                        _.updateStatus(p.invoiceId, InvoiceStatus.Paid)
-                      )
-                      _ <- ZIO.serviceWithZIO[Events](
-                        _.emit(
-                          BillingEvent.PaymentSettled(p.id, p.invoiceId, now)
-                        )
-                      )
-                    } yield ()
-                  case PaymentStatus.Failed =>
-                    ZIO.serviceWithZIO[PaymentStore](
-                      _.updateStatus(p.id, PaymentStatus.Failed)
-                    )
-                  case PaymentStatus.Pending =>
-                    ZIO.unit
-                }
-              } yield ()).catchAll(e =>
-                ZIO.logWarning(
-                  s"[RECON] failed for payment=${p.id}: ${e.getMessage}"
-                )
-              )
-          }
-        }
+               p.processorRef match {
+                 case None =>
+                   ZIO.unit // not initiated yet (should be rare)
+                 case Some(ref) =>
+                   (for {
+                     st <- ZIO
+                             .serviceWithZIO[PaymentProcessor](_.settlementStatus(ref))
+                             .retry(retry5)
+                     _ <- st match {
+                            case PaymentStatus.Settled =>
+                              for {
+                                now <- Clock.instant
+                                _   <- ZIO.serviceWithZIO[PaymentStore](
+                                       _.updateStatus(p.id, PaymentStatus.Settled)
+                                     )
+                                _ <- ZIO.serviceWithZIO[InvoiceStore](
+                                       _.updateStatus(p.invoiceId, InvoiceStatus.Paid)
+                                     )
+                                _ <- ZIO.serviceWithZIO[Events](
+                                       _.emit(
+                                         BillingEvent.PaymentSettled(p.id, p.invoiceId, now)
+                                       )
+                                     )
+                              } yield ()
+                            case PaymentStatus.Failed =>
+                              ZIO.serviceWithZIO[PaymentStore](
+                                _.updateStatus(p.id, PaymentStatus.Failed)
+                              )
+                            case PaymentStatus.Pending =>
+                              ZIO.unit
+                          }
+                   } yield ()).catchAll(e =>
+                     ZIO.logWarning(
+                       s"[RECON] failed for payment=${p.id}: ${e.getMessage}"
+                     )
+                   )
+               }
+             }
       } yield ()
 
     tick.repeat(Schedule.spaced(20.seconds)).unit
   }
+
 }
 
 // =======================
@@ -603,6 +643,7 @@ object HttpApi {
       amount: BigDecimal,
       currency: String
   )
+
   object IssueInvoiceReq {
     given JsonCodec[IssueInvoiceReq] = DeriveJsonCodec.gen[IssueInvoiceReq]
   }
@@ -647,10 +688,10 @@ object HttpApi {
 
       Method.GET / "api" / "invoices" / string("id") -> handler { (id: String, req: Request) =>
         (for {
-          _ <- requireAuth(req)
+          _   <- requireAuth(req)
           inv <- ZIO
-            .serviceWithZIO[Billing](_.getInvoice(id))
-            .mapError(toHttpError)
+                   .serviceWithZIO[Billing](_.getInvoice(id))
+                   .mapError(toHttpError)
         } yield Response.json(
           s"""{"id":"${inv.id}","customerId":"${inv.customerId}","amount":${inv.money.amount},"currency":"${inv.money.currency}","status":"${inv.status}"}"""
         )).catchAll(ZIO.succeed(_))
@@ -665,20 +706,23 @@ object HttpApi {
       //     } yield Response.json(s"""{"paymentId":"$payId"}""")).catchAll(ZIO.succeed(_))
       //   },
 
-      Method.GET / "api" / "payments" / string("id") / "status" -> handler { (id: String, req: Request) =>
-        (for {
-          _ <- requireAuth(req)
-          st <- ZIO
-            .serviceWithZIO[Billing](_.getPaymentStatus(id))
-            .mapError(toHttpError)
-        } yield Response.json(s"""{"paymentId":"$id","status":"$st"}"""))
-          .catchAll(ZIO.succeed(_))
+      Method.GET / "api" / "payments" / string("id") / "status" -> handler {
+        (id: String, req: Request) =>
+          (for {
+            _  <- requireAuth(req)
+            st <- ZIO
+                    .serviceWithZIO[Billing](_.getPaymentStatus(id))
+                    .mapError(toHttpError)
+          } yield Response.json(s"""{"paymentId":"$id","status":"$st"}"""))
+            .catchAll(ZIO.succeed(_))
       }
     )
+
 }
 
 // Small JSON encoder for events (good enough for webhooks demo)
 extension (e: BillingEvent) {
+
   def toJson: String = {
     e match {
       case BillingEvent.InvoiceIssued(invoiceId, at) =>
@@ -691,6 +735,7 @@ extension (e: BillingEvent) {
         s"""{"type":"KybSubmitted","businessId":"$businessId","at":"$at"}"""
     }
   }
+
 }
 // =======================
 // Main (wiring + structured concurrency)

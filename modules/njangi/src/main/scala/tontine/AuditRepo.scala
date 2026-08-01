@@ -1,5 +1,7 @@
 package tontine
+
 import zio.*
+
 trait AuditRepo {
   def append(event: String): UIO[Unit]
 }

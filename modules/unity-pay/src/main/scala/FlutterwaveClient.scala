@@ -1,9 +1,11 @@
 package unitypay
+
 import sttp.client4._
 
 object FlutterwaveClient {
+
   private val SecretKey = sys.env.getOrElse("FLW_SECRET_KEY", "your_test_key")
-  private val BaseUrl = "https://api.flutterwave.com/v3"
+  private val BaseUrl   = "https://api.flutterwave.com/v3"
 
   def initiateTransfer(payload: String) = {
     basicRequest
@@ -13,4 +15,5 @@ object FlutterwaveClient {
       .contentType("application/json")
       .body(payload)
   }
+
 }

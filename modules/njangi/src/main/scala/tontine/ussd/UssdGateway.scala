@@ -4,17 +4,20 @@ import zio.*
 import tontine.*
 import tontine.service.*
 
-/** USSD Gateway — maps feature-phone key presses to existing tontine services.
+/**
+  * USSD Gateway — maps feature-phone key presses to existing tontine services.
   *
   * Design principles:
-  *   - **No parallel logic**: every action delegates to the same `ContributionService`, `ScoreService`, and
-  *     `CircleService` that the REST API uses.
-  *   - **Stateful sessions**: each conversation is tracked in an in-memory `Ref`; replace with Redis for multi-node
-  *     deployments.
-  *   - **Idempotent confirms**: the `CONTRIBUTE_CONFIRM` step passes the `sessionId` as idempotency key.
+  *   - **No parallel logic**: every action delegates to the same `ContributionService`,
+  *     `ScoreService`, and `CircleService` that the REST API uses.
+  *   - **Stateful sessions**: each conversation is tracked in an in-memory `Ref`; replace with
+  *     Redis for multi-node deployments.
+  *   - **Idempotent confirms**: the `CONTRIBUTE_CONFIRM` step passes the `sessionId` as idempotency
+  *     key.
   *
-  * USSD network integration: Expose a `POST /ussd/callback` endpoint that passes the body parameters (`sessionId`,
-  * `phoneNumber`, `text`) to `handle(...)`. Compatible with Africa's Talking USSD API format.
+  * USSD network integration: Expose a `POST /ussd/callback` endpoint that passes the body
+  * parameters (`sessionId`, `phoneNumber`, `text`) to `handle(...)`. Compatible with Africa's
+  * Talking USSD API format.
   *
   * Example session (MTN Cameroon, code *XXX#):
   * {{{
@@ -26,7 +29,8 @@ import tontine.service.*
   */
 trait UssdGateway {
 
-  /** Handle one USSD hop.
+  /**
+    * Handle one USSD hop.
     *
     * @param sessionId
     *   Unique session identifier from the USSD aggregator.
@@ -42,11 +46,14 @@ trait UssdGateway {
       phoneE164: String,
       input: String
   ): UIO[UssdResponse]
+
 }
 
 object UssdGateway {
 
-  /** USSD session TTL — 180 seconds (standard African network timeout). */
+  /**
+    * USSD session TTL — 180 seconds (standard African network timeout).
+    */
   private val TtlSeconds = 180L
 
   val live: ZLayer[
@@ -57,10 +64,10 @@ object UssdGateway {
     ZLayer.fromZIO {
       for {
         contributions <- ZIO.service[ContributionService]
-        circles <- ZIO.service[CircleService]
-        scores <- ZIO.service[ScoreService]
-        members <- ZIO.service[MemberRepo]
-        sessions <- Ref.make(Map.empty[String, UssdSession])
+        circles       <- ZIO.service[CircleService]
+        scores        <- ZIO.service[ScoreService]
+        members       <- ZIO.service[MemberRepo]
+        sessions      <- Ref.make(Map.empty[String, UssdSession])
       } yield new UssdGatewayLive(
         contributions,
         circles,
@@ -84,9 +91,9 @@ object UssdGateway {
         input: String
     ): UIO[UssdResponse] =
       for {
-        now <- Clock.instant
+        now     <- Clock.instant
         session <- getOrCreateSession(sessionId, phoneE164, now)
-        resp <- route(session, input.trim, now)
+        resp    <- route(session, input.trim, now)
         // Persist updated last-activity timestamp
         _ <- sessions.update(m => m + (sessionId -> session.copy(lastActivityAt = now)))
       } yield resp
@@ -289,5 +296,7 @@ object UssdGateway {
       ZIO.logInfo(
         s"[USSD] Loan disbursal for ${session.phoneE164} amount=${session.context.getOrElse("loanAmount", "?")}"
       )
+
   }
+
 }

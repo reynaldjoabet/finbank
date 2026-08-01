@@ -1,14 +1,17 @@
 package finbank.remit
 
+import scala.math.BigDecimal.RoundingMode
+import scala.util.Random
+
+import com.github.plokhotnyuk.jsoniter_scala.circe.CirceCodecs
 import com.github.plokhotnyuk.jsoniter_scala.circe.JsoniterScalaCodec._
 import com.github.plokhotnyuk.jsoniter_scala.core._
-import scala.util.Random
-import com.github.plokhotnyuk.jsoniter_scala.circe.CirceCodecs
-import scala.math.BigDecimal.RoundingMode
 
 object QuoteService {
+
 // Models
   case class QuoteRequest(amountMUR: BigDecimal)
+
   case class RouteOption(
       name: String,
       steps: List[String],
@@ -16,7 +19,9 @@ object QuoteService {
       deliveredAmountXAF: BigDecimal,
       totalLossPercent: BigDecimal
   )
+
   case class SendRequest(amountMUR: BigDecimal, chosenRoute: String)
+
   case class SendResult(
       success: Boolean,
       deliveredXAF: BigDecimal,
@@ -42,7 +47,7 @@ object QuoteService {
     val chainedLoss = percentLoss(amt, chainedDelivered)
 
 // 2) Crypto-assisted: MUR -> USDT -> XAF
-    val cryptoFees = List(BigDecimal("0.02"), BigDecimal("0.03"))
+    val cryptoFees      = List(BigDecimal("0.02"), BigDecimal("0.03"))
     val cryptoDelivered = applyFeesSequential(
       amt,
       cryptoFees,
@@ -51,7 +56,7 @@ object QuoteService {
     val cryptoLoss = percentLoss(amt, cryptoDelivered)
 
 // 3) Fiat-direct: MUR -> XAF via local partner
-    val fiatFees = List(BigDecimal("0.025"))
+    val fiatFees      = List(BigDecimal("0.025"))
     val fiatDelivered =
       applyFeesSequential(amt, fiatFees, RouteHelpers.murToXafConversion)
     val fiatLoss = percentLoss(amt, fiatDelivered)
@@ -100,6 +105,7 @@ object QuoteService {
         )
     }
   }
+
   private def applyFeesSequential(
       amountMUR: BigDecimal,
       fees: List[BigDecimal],
@@ -110,18 +116,21 @@ object QuoteService {
     }
     conversionFn(afterFees).setScale(2, RoundingMode.HALF_UP)
   }
+
   private def percentLoss(
       originalMUR: BigDecimal,
       deliveredXAF: BigDecimal
   ): BigDecimal = {
     val naiveXaf = RouteHelpers.murToXaf(originalMUR)
-    if (naiveXaf == 0) then BigDecimal(0)
+    if naiveXaf == 0 then BigDecimal(0)
     else
       (((naiveXaf - deliveredXAF) / naiveXaf) * 100)
         .setScale(4, RoundingMode.HALF_UP)
   }
+
 }
 object RouteHelpers {
+
 // Example conversion helper functions: tie MUR -> USD -> XAF chain for demo
   private val murToUsdRate = BigDecimal("0.023")
   private val usdToXafRate = BigDecimal("1000")
@@ -139,4 +148,5 @@ object RouteHelpers {
   def murToXafConversion(mur: BigDecimal): BigDecimal =
 // direct MUR->XAF conversion (demo uses same parity but could differ when using live rates)
     murToXaf(mur)
+
 }

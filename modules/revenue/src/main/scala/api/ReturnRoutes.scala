@@ -14,21 +14,21 @@ object ReturnRoutes {
     Routes(
       Method.POST / "api" / "v1" / "returns" / "drafts" -> handler { (req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p    <- HttpAuth.principal(req)
+          _    <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           body <- JsonSupport.decode[ReturnDraftCreate](req)
-          svc <- ZIO.service[ReturnService]
-          out <- svc.createDraft(body, p)
+          svc  <- ZIO.service[ReturnService]
+          out  <- svc.createDraft(body, p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
       Method.PUT / "api" / "v1" / "returns" / string("id") -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p    <- HttpAuth.principal(req)
+          _    <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           body <- JsonSupport.decode[ReturnDraftUpdate](req)
-          svc <- ZIO.service[ReturnService]
-          out <- svc.updateDraft(ReturnId(id), body, p)
+          svc  <- ZIO.service[ReturnService]
+          out  <- svc.updateDraft(ReturnId(id), body, p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       },
 
@@ -36,8 +36,8 @@ object ReturnRoutes {
         "id"
       ) / "validate" -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p   <- HttpAuth.principal(req)
+          _   <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           svc <- ZIO.service[ReturnService]
           out <- svc.validate(ReturnId(id), p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
@@ -47,8 +47,8 @@ object ReturnRoutes {
         "id"
       ) / "submit" -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p   <- HttpAuth.principal(req)
+          _   <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           svc <- ZIO.service[ReturnService]
           out <- svc.submit(ReturnId(id), p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
@@ -58,8 +58,8 @@ object ReturnRoutes {
         "id"
       ) / "amend" -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p   <- HttpAuth.principal(req)
+          _   <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           svc <- ZIO.service[ReturnService]
           out <- svc.amend(ReturnId(id), p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
@@ -67,7 +67,7 @@ object ReturnRoutes {
 
       Method.GET / "api" / "v1" / "returns" / string("id") -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
+          p   <- HttpAuth.principal(req)
           svc <- ZIO.service[ReturnService]
           out <- svc.get(ReturnId(id), p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
@@ -77,7 +77,7 @@ object ReturnRoutes {
         "tp"
       ) / "returns" -> handler { (tp: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
+          p   <- HttpAuth.principal(req)
           svc <- ZIO.service[ReturnService]
           out <- svc.listByTaxpayer(TaxpayerId(tp), p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
@@ -88,18 +88,19 @@ object ReturnRoutes {
         "id"
       ) / "attachments" -> handler { (id: String, req: Request) =>
         (for {
-          p <- HttpAuth.principal(req)
-          _ <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
+          p    <- HttpAuth.principal(req)
+          _    <- HttpAuth.requireAny(p, Set(Role.Taxpayer, Role.Agent))
           body <- JsonSupport.decode[DocumentUpload](req)
+          _    <- ZIO
+                 .fail(ApiError.BadRequest("entityType must be Return"))
+                 .when(body.entityType != EntityType.Return)
           _ <- ZIO
-            .fail(ApiError.BadRequest("entityType must be Return"))
-            .when(body.entityType != EntityType.Return)
-          _ <- ZIO
-            .fail(ApiError.BadRequest("entityId mismatch"))
-            .when(body.entityId != id)
+                 .fail(ApiError.BadRequest("entityId mismatch"))
+                 .when(body.entityId != id)
           docs <- ZIO.service[DocumentService]
-          out <- docs.upload(body, p)
+          out  <- docs.upload(body, p)
         } yield JsonSupport.okJson(out)).catchAll(e => ZIO.succeed(JsonSupport.errorJson(e)))
       }
     )
+
 }

@@ -1,16 +1,21 @@
 package tontine
+
 import zio.*
+
 trait ContributionRepo {
+
   def create(c: Contribution): UIO[Unit]
   def get(id: ContributionId): IO[AppError.NotFound, Contribution]
   def byCircle(circleId: CircleId): UIO[List[Contribution]]
   def byMember(memberId: MemberId): UIO[List[Contribution]]
   def update(c: Contribution): IO[AppError.NotFound, Unit]
+
 }
 
 final case class ContributionRepoLive(
     ref: Ref[Map[ContributionId, Contribution]]
 ) extends ContributionRepo {
+
   def create(c: Contribution): UIO[Unit] =
     ref.update(_ + (c.id -> c))
 
@@ -36,13 +41,16 @@ final case class ContributionRepoLive(
       .flatMap { _ =>
         get(c.id).unit
       }
+
 }
 
 object ContributionRepo {
+
   val layer =
     ZLayer.fromZIO(
       Ref
         .make(Map.empty[ContributionId, Contribution])
         .map(ContributionRepoLive(_))
     )
+
 }

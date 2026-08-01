@@ -9,14 +9,17 @@ enum MobileOperator derives CanEqual {
 }
 
 trait MobileMoneyService {
+
   def initiateCollection(
       phoneNumber: String,
       amount: BigDecimal,
       operator: MobileOperator
   ): Task[String] // Returns External Transaction Reference
+
 }
 
 case class MobileMoneyLive() extends MobileMoneyService {
+
   override def initiateCollection(
       phoneNumber: String,
       amount: BigDecimal,
@@ -28,6 +31,7 @@ case class MobileMoneyLive() extends MobileMoneyService {
       refId <- ZIO.succeed(s"CM-TXN-${java.util.UUID.randomUUID()}")
     } yield refId
   }
+
 }
 
 object MobileMoneyService {

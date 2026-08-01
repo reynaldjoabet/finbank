@@ -1,38 +1,49 @@
 package finbank.remit
 
+import java.nio.charset.StandardCharsets
+
+import scala.math.BigDecimal.RoundingMode
+
+import com.github.plokhotnyuk.jsoniter_scala.circe.JsoniterScalaCodec.*
 import com.github.plokhotnyuk.jsoniter_scala.core._
 import com.github.plokhotnyuk.jsoniter_scala.macros._
-import com.github.plokhotnyuk.jsoniter_scala.circe.JsoniterScalaCodec.*
-import java.nio.charset.StandardCharsets
-import scala.math.BigDecimal.RoundingMode
 import io.circe.{Codec, Decoder, Encoder, Json}
 import io.circe.syntax._
 
 object JsoniterSyntaticSugar {
+
   import QuoteService2.*
 
-  /** Encode A to UTF-8 bytes (jsoniter direct) */
+  /**
+    * Encode A to UTF-8 bytes (jsoniter direct)
+    */
   def toJsonBytes[A](value: A)(implicit codec: JsonValueCodec[A]): Array[Byte] =
     writeToArray(value)
 
-  /** Encode A to JSON String (UTF-8) */
+  /**
+    * Encode A to JSON String (UTF-8)
+    */
   def toJsonString[A](value: A)(implicit codec: JsonValueCodec[A]): String =
     new String(toJsonBytes(value), StandardCharsets.UTF_8)
 
-  /** Decode bytes (UTF-8 JSON) to A */
+  /**
+    * Decode bytes (UTF-8 JSON) to A
+    */
   def fromJsonBytes[A](bytes: Array[Byte])(implicit
       codec: JsonValueCodec[A]
   ): A =
     readFromArray[A](bytes)
 
-  /** Decode JSON string to A */
+  /**
+    * Decode JSON string to A
+    */
   def fromJsonString[A](s: String)(implicit codec: JsonValueCodec[A]): A =
     fromJsonBytes[A](s.getBytes(StandardCharsets.UTF_8))
 
   def read(value: String): Json = readFromString(value)
 
   def read2(value: Array[Byte]): Json = readFromArray(value)
-  val quoteRequest = read("{\"amountMUR\": 1000.50}")
+  val quoteRequest                    = read("{\"amountMUR\": 1000.50}")
 
   val quoteRequest2 = quoteRequest.as[QuoteService2.QuoteRequest]
 
@@ -43,6 +54,7 @@ object JsoniterSyntaticSugar {
     BigDecimal("22000.00"),
     BigDecimal("5.1234")
   )
+
   val json = toJsonString(routeOption)
 
   val decodedRouteOption = fromJsonString[QuoteService2.RouteOption](json)
@@ -58,16 +70,21 @@ object QuoteService2 {
 
   implicit val quoteRequestCodec: JsonValueCodec[QuoteRequest] =
     JsonCodecMaker.make[QuoteRequest]
+
   implicit val routeOptionCodec: JsonValueCodec[RouteOption] =
     JsonCodecMaker.make[RouteOption]
+
   implicit val routeOptionListCodec: JsonValueCodec[List[RouteOption]] =
     JsonCodecMaker.make[List[RouteOption]]
+
   implicit val sendRequestCodec: JsonValueCodec[SendRequest] =
     JsonCodecMaker.make[SendRequest]
+
   implicit val sendResultCodec: JsonValueCodec[SendResult] =
     JsonCodecMaker.make[SendResult]
 
   case class QuoteRequest(amountMUR: BigDecimal) derives Codec.AsObject
+
   case class RouteOption(
       name: String,
       steps: List[String],
@@ -75,7 +92,9 @@ object QuoteService2 {
       deliveredAmountXAF: BigDecimal,
       totalLossPercent: BigDecimal
   ) derives Codec.AsObject
+
   case class SendRequest(amountMUR: BigDecimal, chosenRoute: String) derives Codec.AsObject
+
   case class SendResult(
       success: Boolean,
       deliveredXAF: BigDecimal,
@@ -102,7 +121,7 @@ object QuoteService2 {
     val chainedLoss = percentLoss(amt, chainedDelivered)
 
     // 2) Crypto-assisted: MUR -> USDT -> XAF
-    val cryptoFees = List(BigDecimal("0.02"), BigDecimal("0.03"))
+    val cryptoFees      = List(BigDecimal("0.02"), BigDecimal("0.03"))
     val cryptoDelivered =
       applyFeesSequential(
         amt,
@@ -112,7 +131,7 @@ object QuoteService2 {
     val cryptoLoss = percentLoss(amt, cryptoDelivered)
 
     // 3) Fiat-direct: MUR -> XAF via local partner
-    val fiatFees = List(BigDecimal("0.025"))
+    val fiatFees      = List(BigDecimal("0.025"))
     val fiatDelivered =
       applyFeesSequential(amt, fiatFees, RouteHelpers.murToXafConversion)
     val fiatLoss = percentLoss(amt, fiatDelivered)
@@ -197,9 +216,11 @@ object QuoteService2 {
     val res = executeSend(req)
     toJsonString(res)
   }
+
 }
 
 object RouteHelpers2 {
+
   // Example conversion helper functions: tie MUR -> USD -> XAF chain for demo
   private val murToUsdRate = BigDecimal("0.023")
   private val usdToXafRate = BigDecimal("1000")
@@ -217,4 +238,5 @@ object RouteHelpers2 {
   def murToXafConversion(mur: BigDecimal): BigDecimal =
     // direct MUR->XAF conversion (demo uses same parity but could differ when using live rates)
     murToXaf(mur)
+
 }

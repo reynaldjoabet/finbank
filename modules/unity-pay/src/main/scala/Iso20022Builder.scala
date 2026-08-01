@@ -1,17 +1,20 @@
 package unitypay
 
-import zio.*
 import java.time.Instant
 
-/** Lightweight ISO 20022 `pacs.008` (FIToFICustomerCreditTransfer) builder.
+import zio.*
+
+/**
+  * Lightweight ISO 20022 `pacs.008` (FIToFICustomerCreditTransfer) builder.
   *
   * This produces an XML string that can be submitted to regional RTGS/ACH systems in Africa:
   *   - GIMAC / SICA — CEMAC zone (XAF)
   *   - BCEAO STAR — WAEMU zone (XOF)
   *   - PAPSS — Pan-African Payment and Settlement System
   *
-  * The builder covers the minimal mandatory fields required by all three schemes. Additional optional blocks
-  * (regulatory reporting, remittance information, etc.) can be appended via `withRemittanceInfo`.
+  * The builder covers the minimal mandatory fields required by all three schemes. Additional
+  * optional blocks (regulatory reporting, remittance information, etc.) can be appended via
+  * `withRemittanceInfo`.
   *
   * Reference: ISO 20022 `pacs.008.001.10` schema.
   */
@@ -34,12 +37,15 @@ final case class Pacs008Message(
 object Pacs008Message {
 
   enum SettlementMethod derives CanEqual {
+
     case CLRG // Clearing System (GIMAC/SICA/PAPSS)
     case INDA // Instructed Agent settles
     case INGA // Instructing Agent settles
+
   }
 
-  /** Renders the pacs.008 message as a well-formed XML string.
+  /**
+    * Renders the pacs.008 message as a well-formed XML string.
     *
     * The namespace and schema location match PAPSS's published requirements.
     */
@@ -97,19 +103,24 @@ object Pacs008Message {
       .replace("\"", "&quot;")
       .replace("'", "&apos;")
 
-  /** Convert minor-unit Long to a decimal string with correct scale. XAF / XOF have 0 decimal places (1 XAF = 1 minor
-    * unit). All others assumed 2 decimal places.
+  /**
+    * Convert minor-unit Long to a decimal string with correct scale. XAF / XOF have 0 decimal
+    * places (1 XAF = 1 minor unit). All others assumed 2 decimal places.
     */
   private def formatMinor(a: Amount): String =
     a.currency match {
       case Currency.XAF | Currency.XOF => a.minor.toString
       case _                           => f"${a.minor / 100.0}%.2f"
     }
+
 }
 
-/** ZIO service that builds and validates pacs.008 messages before submission to a regional clearing system.
+/**
+  * ZIO service that builds and validates pacs.008 messages before submission to a regional clearing
+  * system.
   */
 trait Iso20022Service {
+
   def buildPacs008(
       debtorName: String,
       debtorIban: String,
@@ -122,6 +133,7 @@ trait Iso20022Service {
   ): UIO[String] // returns XML string
 
   def submitToClearing(xml: String): IO[Iso20022Error, ClearingAck]
+
 }
 
 final case class ClearingAck(
@@ -131,13 +143,18 @@ final case class ClearingAck(
 )
 
 sealed trait Iso20022Error extends Throwable {
+
   def message: String
   override def getMessage(): String = message
+
 }
+
 object Iso20022Error {
+
   final case class ValidationError(message: String) extends Iso20022Error
-  final case class SchemeRejected(message: String) extends Iso20022Error
-  final case class NetworkError(message: String) extends Iso20022Error
+  final case class SchemeRejected(message: String)  extends Iso20022Error
+  final case class NetworkError(message: String)    extends Iso20022Error
+
 }
 
 object Iso20022Service {
@@ -157,23 +174,23 @@ object Iso20022Service {
       ): UIO[String] =
         for {
           msgId <- Random.nextUUID.map(u => s"FINBANK-$u")
-          now <- Clock.instant
+          now   <- Clock.instant
           e2eId <- Random.nextUUID.map(_.toString)
-          msg = Pacs008Message(
-            msgId = msgId,
-            creationDateTime = now,
-            numberOfTxs = 1,
-            settlementMethod = Pacs008Message.SettlementMethod.CLRG,
-            debtorName = debtorName,
-            debtorIban = debtorIban,
-            debtorBic = debtorBic,
-            creditorName = creditorName,
-            creditorIban = creditorIban,
-            creditorBic = creditorBic,
-            amount = amount,
-            endToEndId = e2eId,
-            remittanceInfo = remittanceInfo
-          )
+          msg    = Pacs008Message(
+                  msgId = msgId,
+                  creationDateTime = now,
+                  numberOfTxs = 1,
+                  settlementMethod = Pacs008Message.SettlementMethod.CLRG,
+                  debtorName = debtorName,
+                  debtorIban = debtorIban,
+                  debtorBic = debtorBic,
+                  creditorName = creditorName,
+                  creditorIban = creditorIban,
+                  creditorBic = creditorBic,
+                  amount = amount,
+                  endToEndId = e2eId,
+                  remittanceInfo = remittanceInfo
+                )
         } yield Pacs008Message.toXml(msg)
 
       override def submitToClearing(
@@ -181,7 +198,7 @@ object Iso20022Service {
       ): IO[Iso20022Error, ClearingAck] =
         for {
           // --- stub: replace with real HTTP call to GIMAC / PAPSS endpoint ---
-          _ <- ZIO.logInfo("[ISO 20022] Submitting pacs.008 to clearing system")
+          _   <- ZIO.logInfo("[ISO 20022] Submitting pacs.008 to clearing system")
           now <- Clock.instant
           ref <- Random.nextUUID.map(u => s"CLR-$u")
         } yield ClearingAck(
@@ -191,4 +208,5 @@ object Iso20022Service {
         )
     }
   }
+
 }

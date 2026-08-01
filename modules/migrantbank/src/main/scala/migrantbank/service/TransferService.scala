@@ -1,13 +1,15 @@
 package migrantbank.service
 
+import java.util.UUID
+
 import migrantbank.config.AppConfig
 import migrantbank.db.Db
 import migrantbank.domain.{*, given}
 import migrantbank.repo.*
 import zio.*
-import java.util.UUID
 
 trait TransferService {
+
   def p2p(
       from: UUID,
       to: UUID,
@@ -16,6 +18,7 @@ trait TransferService {
       idempotencyKey: Option[String],
       correlationId: String
   ): IO[AppError, Transfer]
+
   def ach(
       from: UUID,
       destination: String,
@@ -24,12 +27,15 @@ trait TransferService {
       idempotencyKey: Option[String],
       correlationId: String
   ): IO[AppError, Transfer]
+
   def list(userId: UUID): IO[AppError, List[Transfer]]
+
   def adminSetStatus(
       transferId: UUID,
       status: TransferStatus,
       correlationId: String
   ): IO[AppError, Unit]
+
 }
 
 object TransferService {
@@ -39,7 +45,10 @@ object TransferService {
       new TransferService {
 
         private def risk(amount: Money): (Boolean, Option[String]) =
-          if amount.amountMinor >= cfg.fraud.flagThresholdMinor then (true, Some("THRESHOLD_EXCEEDED"))
+          if amount.amountMinor >= cfg.fraud.flagThresholdMinor then (
+            true,
+            Some("THRESHOLD_EXCEEDED")
+          )
           else (false, None)
 
         override def p2p(
@@ -55,94 +64,94 @@ object TransferService {
           else
             for {
               existing <- idempotencyKey match {
-                case Some(k) =>
-                  db.query {
-                    TransferRepo.findByIdempotency(from, TransferType.P2P, k)
-                  }
-                case None => ZIO.succeed(None)
-              }
+                            case Some(k) =>
+                              db.query {
+                                TransferRepo.findByIdempotency(from, TransferType.P2P, k)
+                              }
+                            case None => ZIO.succeed(None)
+                          }
 
               t <- existing match {
-                case Some(found) => ZIO.succeed(found)
-                case None        =>
-                  for {
-                    fromAcc <- db
-                      .query {
-                        AccountRepo.findByUserForUpdate(from)
-                      }
-                      .flatMap {
-                        ZIO
-                          .fromOption(_)
-                          .orElseFail(
-                            AppError.NotFound("Sender account not found")
-                          )
-                      }
-                    toAcc <- db
-                      .query {
-                        AccountRepo.findByUserForUpdate(to)
-                      }
-                      .flatMap {
-                        ZIO
-                          .fromOption(_)
-                          .orElseFail(
-                            AppError.NotFound("Recipient account not found")
-                          )
-                      }
+                     case Some(found) => ZIO.succeed(found)
+                     case None        =>
+                       for {
+                         fromAcc <- db
+                                      .query {
+                                        AccountRepo.findByUserForUpdate(from)
+                                      }
+                                      .flatMap {
+                                        ZIO
+                                          .fromOption(_)
+                                          .orElseFail(
+                                            AppError.NotFound("Sender account not found")
+                                          )
+                                      }
+                         toAcc <- db
+                                    .query {
+                                      AccountRepo.findByUserForUpdate(to)
+                                    }
+                                    .flatMap {
+                                      ZIO
+                                        .fromOption(_)
+                                        .orElseFail(
+                                          AppError.NotFound("Recipient account not found")
+                                        )
+                                    }
 
-                    _ <- ZIO
-                      .fail(AppError.Validation("Currency mismatch"))
-                      .when(
-                        fromAcc.currency != amount.currency || toAcc.currency != amount.currency
-                      )
-                    _ <- ZIO
-                      .fail(AppError.Validation("Insufficient funds"))
-                      .when(fromAcc.balanceMinor < amount.amountMinor)
+                         _ <- ZIO
+                                .fail(AppError.Validation("Currency mismatch"))
+                                .when(
+                                  fromAcc.currency != amount.currency || toAcc.currency != amount.currency
+                                )
+                         _ <- ZIO
+                                .fail(AppError.Validation("Insufficient funds"))
+                                .when(fromAcc.balanceMinor < amount.amountMinor)
 
-                    id <- Random.nextUUID
-                    now <- Clock.instant
-                    (flag, reason) = risk(amount)
-                    transfer = Transfer(
-                      id = id,
-                      transferType = TransferType.P2P,
-                      fromUserId = from,
-                      toUserId = Some(to),
-                      achDestination = None,
-                      amount = amount,
-                      note = note,
-                      status = TransferStatus.COMPLETED,
-                      idempotencyKey = idempotencyKey,
-                      riskFlag = flag,
-                      riskReason = reason,
-                      createdAt = now
-                    )
+                         id            <- Random.nextUUID
+                         now           <- Clock.instant
+                         (flag, reason) = risk(amount)
+                         transfer       = Transfer(
+                                      id = id,
+                                      transferType = TransferType.P2P,
+                                      fromUserId = from,
+                                      toUserId = Some(to),
+                                      achDestination = None,
+                                      amount = amount,
+                                      note = note,
+                                      status = TransferStatus.COMPLETED,
+                                      idempotencyKey = idempotencyKey,
+                                      riskFlag = flag,
+                                      riskReason = reason,
+                                      createdAt = now
+                                    )
 
-                    _ <- db.transaction {
-                      AccountRepo.updateBalance(
-                        fromAcc.id,
-                        fromAcc.balanceMinor - amount.amountMinor
-                      )
-                      AccountRepo.updateBalance(
-                        toAcc.id,
-                        toAcc.balanceMinor + amount.amountMinor
-                      )
+                         _ <- db.transaction {
+                                AccountRepo.updateBalance(
+                                  fromAcc.id,
+                                  fromAcc.balanceMinor - amount.amountMinor
+                                )
+                                AccountRepo.updateBalance(
+                                  toAcc.id,
+                                  toAcc.balanceMinor + amount.amountMinor
+                                )
 
-                      TransferRepo.insert(transfer)
-                      LedgerRepo.insert(
-                        fromAcc.id,
-                        toAcc.id,
-                        amount.amountMinor,
-                        amount.currency,
-                        s"P2P transfer $id"
-                      )
-                      AuditRepo.append(
-                        "transfer_p2p",
-                        Some(from),
-                        correlationId,
-                        s"to=$to amount=${amount.amountMinor} ${amount.currency} flag=$flag"
-                      )
-                    }
-                  } yield transfer
-              }
+                                TransferRepo.insert(transfer)
+                                LedgerRepo.insert(
+                                  fromAcc.id,
+                                  toAcc.id,
+                                  amount.amountMinor,
+                                  amount.currency,
+                                  s"P2P transfer $id"
+                                )
+                                AuditRepo.append(
+                                  "transfer_p2p",
+                                  Some(from),
+                                  correlationId,
+                                  s"to=$to amount=${amount.amountMinor} ${amount.currency} flag=$flag"
+                                )
+                              }
+                       } yield transfer
+                   }
             } yield t
 
         override def ach(
@@ -158,94 +167,95 @@ object TransferService {
           else
             for {
               existing <- idempotencyKey match {
-                case Some(k) =>
-                  db.query {
-                    TransferRepo.findByIdempotency(from, TransferType.ACH, k)
-                  }
-                case None => ZIO.succeed(None)
-              }
+                            case Some(k) =>
+                              db.query {
+                                TransferRepo.findByIdempotency(from, TransferType.ACH, k)
+                              }
+                            case None => ZIO.succeed(None)
+                          }
 
               t <- existing match {
-                case Some(found) => ZIO.succeed(found)
-                case None        =>
-                  for {
-                    fromAcc <- db
-                      .query {
-                        AccountRepo.findByUserForUpdate(from)
-                      }
-                      .flatMap {
-                        ZIO
-                          .fromOption(_)
-                          .orElseFail(
-                            AppError.NotFound("Sender account not found")
-                          )
-                      }
-                    clearing <- db
-                      .query {
-                        AccountRepo.getByIdForUpdate(SystemAccounts.AchClearing)
-                      }
-                      .flatMap {
-                        ZIO
-                          .fromOption(_)
-                          .orElseFail(
-                            AppError.NotFound("Clearing account not found")
-                          )
-                      }
+                     case Some(found) => ZIO.succeed(found)
+                     case None        =>
+                       for {
+                         fromAcc <- db
+                                      .query {
+                                        AccountRepo.findByUserForUpdate(from)
+                                      }
+                                      .flatMap {
+                                        ZIO
+                                          .fromOption(_)
+                                          .orElseFail(
+                                            AppError.NotFound("Sender account not found")
+                                          )
+                                      }
+                         clearing <- db
+                                       .query {
+                                         AccountRepo.getByIdForUpdate(SystemAccounts.AchClearing)
+                                       }
+                                       .flatMap {
+                                         ZIO
+                                           .fromOption(_)
+                                           .orElseFail(
+                                             AppError.NotFound("Clearing account not found")
+                                           )
+                                       }
 
-                    _ <- ZIO
-                      .fail(AppError.Validation("Currency mismatch"))
-                      .when(
-                        fromAcc.currency != amount.currency || clearing.currency != amount.currency
-                      )
-                    _ <- ZIO
-                      .fail(AppError.Validation("Insufficient funds"))
-                      .when(fromAcc.balanceMinor < amount.amountMinor)
+                         _ <-
+                           ZIO
+                             .fail(AppError.Validation("Currency mismatch"))
+                             .when(
+                               fromAcc.currency != amount.currency || clearing.currency != amount.currency
+                             )
+                         _ <- ZIO
+                                .fail(AppError.Validation("Insufficient funds"))
+                                .when(fromAcc.balanceMinor < amount.amountMinor)
 
-                    id <- Random.nextUUID
-                    now <- Clock.instant
-                    (flag, reason) = risk(amount)
-                    transfer = Transfer(
-                      id = id,
-                      transferType = TransferType.ACH,
-                      fromUserId = from,
-                      toUserId = None,
-                      achDestination = Some(destination),
-                      amount = amount,
-                      note = note,
-                      status = TransferStatus.PROCESSING,
-                      idempotencyKey = idempotencyKey,
-                      riskFlag = flag,
-                      riskReason = reason,
-                      createdAt = now
-                    )
+                         id            <- Random.nextUUID
+                         now           <- Clock.instant
+                         (flag, reason) = risk(amount)
+                         transfer       = Transfer(
+                                      id = id,
+                                      transferType = TransferType.ACH,
+                                      fromUserId = from,
+                                      toUserId = None,
+                                      achDestination = Some(destination),
+                                      amount = amount,
+                                      note = note,
+                                      status = TransferStatus.PROCESSING,
+                                      idempotencyKey = idempotencyKey,
+                                      riskFlag = flag,
+                                      riskReason = reason,
+                                      createdAt = now
+                                    )
 
-                    _ <- db.transaction {
-                      AccountRepo.updateBalance(
-                        fromAcc.id,
-                        fromAcc.balanceMinor - amount.amountMinor
-                      )
-                      AccountRepo.updateBalance(
-                        clearing.id,
-                        clearing.balanceMinor + amount.amountMinor
-                      )
+                         _ <- db.transaction {
+                                AccountRepo.updateBalance(
+                                  fromAcc.id,
+                                  fromAcc.balanceMinor - amount.amountMinor
+                                )
+                                AccountRepo.updateBalance(
+                                  clearing.id,
+                                  clearing.balanceMinor + amount.amountMinor
+                                )
 
-                      TransferRepo.insert(transfer)
-                      LedgerRepo.insert(
-                        fromAcc.id,
-                        clearing.id,
-                        amount.amountMinor,
-                        amount.currency,
-                        s"ACH transfer $id"
-                      )
-                      AuditRepo.append(
-                        "transfer_ach_created",
-                        Some(from),
-                        correlationId,
-                        s"dest=$destination amount=${amount.amountMinor} ${amount.currency} flag=$flag"
-                      )
-                    }
-                  } yield transfer
-              }
+                                TransferRepo.insert(transfer)
+                                LedgerRepo.insert(
+                                  fromAcc.id,
+                                  clearing.id,
+                                  amount.amountMinor,
+                                  amount.currency,
+                                  s"ACH transfer $id"
+                                )
+                                AuditRepo.append(
+                                  "transfer_ach_created",
+                                  Some(from),
+                                  correlationId,
+                                  s"dest=$destination amount=${amount.amountMinor} ${amount.currency} flag=$flag"
+                                )
+                              }
+                       } yield transfer
+                   }
             } yield t
 
         override def list(userId: UUID): IO[AppError, List[Transfer]] =
@@ -259,71 +269,73 @@ object TransferService {
             correlationId: String
         ): IO[AppError, Unit] =
           for {
-            t <- db.query { TransferRepo.get(transferId) }
+            t <- db.query(TransferRepo.get(transferId))
             _ <- (t.status, status) match {
-              case (TransferStatus.PROCESSING, TransferStatus.FAILED) =>
-                for {
-                  clearing <- db
-                    .query {
-                      AccountRepo.getByIdForUpdate(SystemAccounts.AchClearing)
-                    }
-                    .flatMap {
-                      ZIO
-                        .fromOption(_)
-                        .orElseFail(
-                          AppError.NotFound("Clearing account not found")
-                        )
-                    }
-                  senderAcc <- db
-                    .query {
-                      AccountRepo.findByUserForUpdate(t.fromUserId)
-                    }
-                    .flatMap {
-                      ZIO
-                        .fromOption(_)
-                        .orElseFail(
-                          AppError.NotFound("Sender account not found")
-                        )
-                    }
-                  _ <- ZIO
-                    .fail(AppError.Validation("Currency mismatch"))
-                    .when(
-                      clearing.currency != t.amount.currency || senderAcc.currency != t.amount.currency
-                    )
-                  _ <- ZIO
-                    .fail(AppError.Validation("Clearing insufficient"))
-                    .when(clearing.balanceMinor < t.amount.amountMinor)
+                   case (TransferStatus.PROCESSING, TransferStatus.FAILED) =>
+                     for {
+                       clearing <- db
+                                     .query {
+                                       AccountRepo.getByIdForUpdate(SystemAccounts.AchClearing)
+                                     }
+                                     .flatMap {
+                                       ZIO
+                                         .fromOption(_)
+                                         .orElseFail(
+                                           AppError.NotFound("Clearing account not found")
+                                         )
+                                     }
+                       senderAcc <- db
+                                      .query {
+                                        AccountRepo.findByUserForUpdate(t.fromUserId)
+                                      }
+                                      .flatMap {
+                                        ZIO
+                                          .fromOption(_)
+                                          .orElseFail(
+                                            AppError.NotFound("Sender account not found")
+                                          )
+                                      }
+                       _ <-
+                         ZIO
+                           .fail(AppError.Validation("Currency mismatch"))
+                           .when(
+                             clearing.currency != t.amount.currency || senderAcc.currency != t.amount.currency
+                           )
+                       _ <- ZIO
+                              .fail(AppError.Validation("Clearing insufficient"))
+                              .when(clearing.balanceMinor < t.amount.amountMinor)
 
-                  _ <- db.transaction {
-                    AccountRepo.updateBalance(
-                      clearing.id,
-                      clearing.balanceMinor - t.amount.amountMinor
-                    )
-                    AccountRepo.updateBalance(
-                      senderAcc.id,
-                      senderAcc.balanceMinor + t.amount.amountMinor
-                    )
-                    LedgerRepo.insert(
-                      clearing.id,
-                      senderAcc.id,
-                      t.amount.amountMinor,
-                      t.amount.currency,
-                      s"Reversal for transfer ${t.id}"
-                    )
-                  }
-                } yield ()
-              case _ => ZIO.unit
-            }
+                       _ <- db.transaction {
+                              AccountRepo.updateBalance(
+                                clearing.id,
+                                clearing.balanceMinor - t.amount.amountMinor
+                              )
+                              AccountRepo.updateBalance(
+                                senderAcc.id,
+                                senderAcc.balanceMinor + t.amount.amountMinor
+                              )
+                              LedgerRepo.insert(
+                                clearing.id,
+                                senderAcc.id,
+                                t.amount.amountMinor,
+                                t.amount.currency,
+                                s"Reversal for transfer ${t.id}"
+                              )
+                            }
+                     } yield ()
+                   case _ => ZIO.unit
+                 }
             _ <- db.transaction {
-              TransferRepo.updateStatus(transferId, status)
-              AuditRepo.append(
-                "admin_transfer_status",
-                Some(t.fromUserId),
-                correlationId,
-                s"transferId=$transferId status=$status"
-              )
-            }
+                   TransferRepo.updateStatus(transferId, status)
+                   AuditRepo.append(
+                     "admin_transfer_status",
+                     Some(t.fromUserId),
+                     correlationId,
+                     s"transferId=$transferId status=$status"
+                   )
+                 }
           } yield ()
       }
     }
+
 }

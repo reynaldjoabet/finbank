@@ -17,36 +17,37 @@ object Main extends ZIOAppDefault {
   override def run =
     for {
       cfg <- ConfigLoader.load
-      _ <- ZIO.logInfo(
-        s"Starting MigrantBank backend on ${cfg.http.host}:${cfg.http.port}"
-      )
+      _   <- ZIO.logInfo(
+             s"Starting MigrantBank backend on ${cfg.http.host}:${cfg.http.port}"
+           )
       appLayer = ZLayer.make[AppRoutes.Env & Monitoring](
-        ZLayer.succeed(cfg),
-        Db.live,
-        PasswordHasher.live,
-        Crypto.live,
-        JwtService.live,
-        Metrics.live,
-        RateLimiter.live,
-        DummyProviders.layer,
-        // services
-        RegistrationService.live,
-        AuthService.live,
-        AccountService.live,
-        FundingService.live,
-        TransferService.live,
-        FamilyService.live,
-        PaycheckService.live,
-        LoanService.live,
-        SupportService.live,
-        AdminService.live,
-        CardService.live,
-        // monitoring
-        Monitoring.live
-      )
+                   ZLayer.succeed(cfg),
+                   Db.live,
+                   PasswordHasher.live,
+                   Crypto.live,
+                   JwtService.live,
+                   Metrics.live,
+                   RateLimiter.live,
+                   DummyProviders.layer,
+                   // services
+                   RegistrationService.live,
+                   AuthService.live,
+                   AccountService.live,
+                   FundingService.live,
+                   TransferService.live,
+                   FamilyService.live,
+                   PaycheckService.live,
+                   LoanService.live,
+                   SupportService.live,
+                   AdminService.live,
+                   CardService.live,
+                   // monitoring
+                   Monitoring.live
+                 )
       _ <- (ZIO.serviceWithZIO[Monitoring](_.start).forkDaemon *> Server.serve(
-        AppRoutes.routes
-      ))
-        .provide(appLayer, Server.defaultWithPort(cfg.http.port))
+             AppRoutes.routes
+           ))
+             .provide(appLayer, Server.defaultWithPort(cfg.http.port))
     } yield ()
+
 }

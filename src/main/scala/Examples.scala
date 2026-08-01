@@ -1,12 +1,14 @@
-import com.github.plokhotnyuk.jsoniter_scala.macros.*
 import com.github.plokhotnyuk.jsoniter_scala.core.*
-import io.github.iltotore.iron.{:|, autoRefine, RefinedType, RefinedSubtype}
+import com.github.plokhotnyuk.jsoniter_scala.macros.*
+import io.github.iltotore.iron.{:|, autoRefine, RefinedSubtype, RefinedType}
 import io.github.iltotore.iron.constraint.all.*
 import io.github.iltotore.iron.jsoniter.given
 import pureconfig.{ConfigReader, ConfigSource}
-import io.github.iltotore.iron.{pureconfig as ironPureconfig}
+import io.github.iltotore.iron.pureconfig as ironPureconfig
 import ironPureconfig.given
+
 object Examples {
+
   case class User(name: String :| Alphanumeric, age: Int :| Positive)
   given JsonValueCodec[User] = JsonCodecMaker.make
 
@@ -15,9 +17,11 @@ object Examples {
 
   // Decoding — checks constraint, fails if invalid
   readFromString[User]("""{"name":"totore","age":18}"""): Unit // User("totore", 18)
+
   readFromString[User](
     """{"name":"totore","age":-18}"""
   ): Unit // Error: "Should be strictly positive"
+
 }
 
 object ConfigExample {
@@ -46,8 +50,10 @@ object ConfigExample {
       username: Username,
       password: Password
   ) derives ConfigReader
+
 }
 object ZioJsonExample {
+
   import zio.json.*
   import io.github.iltotore.iron.*
   import io.github.iltotore.iron.constraint.all.*
@@ -57,8 +63,10 @@ object ZioJsonExample {
   case class User(name: String :| Alphanumeric, age: Int :| Positive)
   given JsonCodec[User] = DeriveJsonCodec.gen
 
-  User("Iltotore", 18).toJson: Unit // {"name":"Iltotore","age":18}
+  User("Iltotore", 18).toJson: Unit                       // {"name":"Iltotore","age":18}
   """{"name":"Iltotore","age":18}""".fromJson[User]: Unit // Right(User(Iltotore, 18))
+
   """{"name":"Iltotore","age":-18}"""
     .fromJson[User]: Unit // Left(.age(Should be greater than 0))
+
 }

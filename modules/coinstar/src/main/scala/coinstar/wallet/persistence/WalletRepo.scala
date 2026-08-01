@@ -1,24 +1,29 @@
 package coinstar.wallet.persistence
 
+import java.sql.SQLException
+import java.time.Instant
+import java.util.UUID
+
 import coinstar.wallet.domain.{Asset, DomainError, UserId, Wallet, WalletId, given}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
 
-import java.time.Instant
-import java.util.UUID
-import java.sql.SQLException
-
 trait WalletRepo {
+
   def findById(userId: UserId, walletId: WalletId): IO[DomainError, Wallet]
+
   def findByUserAndAsset(
       userId: UserId,
       asset: Asset
   ): IO[DomainError, Option[Wallet]]
+
   def listByUser(userId: UserId): IO[DomainError, List[Wallet]]
   def createIfMissing(userId: UserId, asset: Asset): IO[DomainError, Wallet]
 
-  /** Optimistic concurrency: update must match expected version. */
+  /**
+    * Optimistic concurrency: update must match expected version.
+    */
   def updateBalance(
       walletId: WalletId,
       expectedVersion: Long,
@@ -26,8 +31,11 @@ trait WalletRepo {
   ): IO[DomainError, Unit]
 
   def ping: IO[DomainError, Unit]
+
 }
+
 object WalletRepo {
+
   def findById(
       userId: UserId,
       walletId: WalletId
@@ -54,8 +62,11 @@ object WalletRepo {
 
   def ping: ZIO[WalletRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[WalletRepo](_.ping)
+
 }
+
 final class WalletRepoLive(quill: Quill.Postgres[SnakeCase]) extends WalletRepo {
+
   import quill.*
 
   private inline def wallets = quote(querySchema[WalletRow]("wallets"))
@@ -121,7 +132,7 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase]) extends WalletRepo 
       case Some(w) => ZIO.succeed(w)
       case None    =>
         val now = Instant.now()
-        val id = UUID.randomUUID()
+        val id  = UUID.randomUUID()
         val row = WalletRow(
           id,
           userId.value,
@@ -148,7 +159,7 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase]) extends WalletRepo 
         .filter(w => w.id == lift(walletId.value) && w.version == lift(expectedVersion))
         .update(
           _.balanceMinor -> lift(newBalanceMinor),
-          _.version -> (lift(expectedVersion) + 1L)
+          _.version      -> (lift(expectedVersion) + 1L)
         )
     ).mapError(e => DomainError.External(s"DB update failed: ${e.getMessage}"))
       .flatMap { updatedRows =>
@@ -159,8 +170,12 @@ final class WalletRepoLive(quill: Quill.Postgres[SnakeCase]) extends WalletRepo 
               .Conflict("Concurrent update detected (wallet version mismatch)")
           )
       }
+
 }
+
 object WalletRepoLive {
+
   val layer: ZLayer[Quill.Postgres[SnakeCase], Nothing, WalletRepo] =
     ZLayer.fromFunction(new WalletRepoLive(_))
+
 }

@@ -7,15 +7,17 @@ import com.zaxxer.hikari.HikariDataSource
 import migrantbank.domain.AppError
 import org.flywaydb.core.Flyway
 import zio.*
-
 import javax.sql.DataSource
 
 trait Db {
+
   def transactor: UIO[Transactor]
   def query[A](f: DbCon ?=> A): IO[AppError, A]
   def transaction[A](f: DbCon ?=> A): IO[AppError, A]
   def dataSource: UIO[DataSource]
+
 }
+
 object Db {
 
   private def toAppError(t: Throwable): AppError =
@@ -25,29 +27,29 @@ object Db {
     ZLayer.scoped {
       for {
         cfg <- ZIO.service[AppConfig]
-        ds <- ZIO.acquireRelease(
-          ZIO.attempt {
-            val hc = new HikariConfig()
-            hc.setJdbcUrl(cfg.db.jdbcUrl)
-            hc.setUsername(cfg.db.user)
-            hc.setPassword(cfg.db.password)
-            hc.setMaximumPoolSize(cfg.db.maxPoolSize)
-            hc.setPoolName("migrantbank-hikari")
-            new HikariDataSource(hc)
-          }
-        )(ds => ZIO.attempt(ds.close()).orDie)
+        ds  <- ZIO.acquireRelease(
+                ZIO.attempt {
+                  val hc = new HikariConfig()
+                  hc.setJdbcUrl(cfg.db.jdbcUrl)
+                  hc.setUsername(cfg.db.user)
+                  hc.setPassword(cfg.db.password)
+                  hc.setMaximumPoolSize(cfg.db.maxPoolSize)
+                  hc.setPoolName("migrantbank-hikari")
+                  new HikariDataSource(hc)
+                }
+              )(ds => ZIO.attempt(ds.close()).orDie)
 
         // Flyway migration remains the same
         _ <- ZIO
-          .attempt {
-            Flyway
-              .configure()
-              .dataSource(ds)
-              .locations("classpath:db/migration")
-              .load()
-              .migrate()
-          }
-          .tapError(e => ZIO.logError(s"Flyway migration failed: ${e.getMessage}"))
+               .attempt {
+                 Flyway
+                   .configure()
+                   .dataSource(ds)
+                   .locations("classpath:db/migration")
+                   .load()
+                   .migrate()
+               }
+               .tapError(e => ZIO.logError(s"Flyway migration failed: ${e.getMessage}"))
 
         // Create the Magnum Transactor
         xa = Transactor(ds)
@@ -63,4 +65,5 @@ object Db {
           ZIO.attempt(xa.transact(f)).mapError(toAppError)
       }
     }
+
 }

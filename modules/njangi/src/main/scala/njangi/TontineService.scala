@@ -1,14 +1,19 @@
 package njangi
-import zio._
-import java.util.UUID
-import java.time.Instant
+
 import java.{util => ju}
+import java.time.Instant
+import java.util.UUID
+
+import zio._
 
 trait TontineService {
+
   def collectContribution(memberId: UUID, circleId: UUID): Task[Boolean]
+
   def processRotation(
       circleId: UUID
   ): Task[UUID] // Returns the ID of the member paid
+
 }
 
 case class TontineServiceLive(
@@ -26,9 +31,9 @@ case class TontineServiceLive(
 
       // Trigger the "STK Push" via GIMAC/MTN/Orange API
       paymentStatus <- momoClient.requestPayment(
-        phone = member.momoNumber,
-        amount = circle.contributionAmount
-      )
+                         phone = member.momoNumber,
+                         amount = circle.contributionAmount
+                       )
 
       _ <-
         if (paymentStatus == PaymentStatus.Success) {
@@ -38,5 +43,7 @@ case class TontineServiceLive(
         }
     } yield paymentStatus == PaymentStatus.Success
   }
+
   override def processRotation(circleId: ju.UUID): Task[ju.UUID] = ???
+
 }

@@ -1,5 +1,8 @@
 package migrantbank.security
 
+import java.util.Date
+import java.util.UUID
+
 import migrantbank.config.AppConfig
 import com.nimbusds.jose.*
 import com.nimbusds.jose.crypto.*
@@ -8,13 +11,12 @@ import migrantbank.domain.AppError
 import migrantbank.domain.AuthContext
 import zio.*
 
-import java.util.Date
-import java.util.UUID
-
 trait JwtService2 {
+
   def issueAccess(userId: UUID, role: String): UIO[String]
   def issueRefresh(): UIO[String]
   def verifyAccess(token: String): IO[AppError.Unauthorized, AuthContext]
+
 }
 
 object JwtService2 {
@@ -23,8 +25,8 @@ object JwtService2 {
     ZLayer.fromFunction { (cfg: AppConfig) =>
       new JwtService2 {
         private val sharedSecret = cfg.security.jwt.secret.getBytes
-        private val signer = new MACSigner(sharedSecret)
-        private val verifier = new MACVerifier(sharedSecret)
+        private val signer       = new MACSigner(sharedSecret)
+        private val verifier     = new MACVerifier(sharedSecret)
 
         private def nowMs: Long = java.lang.System.currentTimeMillis()
 
@@ -80,7 +82,7 @@ object JwtService2 {
                 throw new Exception("Invalid Issuer")
 
               val userId = UUID.fromString(claims.getSubject)
-              val role =
+              val role   =
                 scala.Option(claims.getStringClaim("role")).getOrElse("user")
 
               AuthContext(userId, role)
@@ -88,4 +90,5 @@ object JwtService2 {
             .mapError(_ => AppError.Unauthorized("Invalid or expired token"))
       }
     }
+
 }

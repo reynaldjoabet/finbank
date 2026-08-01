@@ -12,6 +12,7 @@ final case class AppConfig(
 object AppConfig {
 
   final case class Http(host: String, port: Int)
+
   final case class Db(
       jdbcUrl: String,
       user: String,
@@ -44,4 +45,5 @@ object AppConfig {
       alertEmail: String,
       alertPhone: String
   )
+
 }

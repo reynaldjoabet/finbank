@@ -1,8 +1,8 @@
 package migrantbank.api
 
 import HttpUtils.*
-import migrantbank.security.JwtService
 import migrantbank.domain.*
+import migrantbank.security.JwtService
 import zio.*
 import zio.http.*
 
@@ -23,4 +23,5 @@ object AuthHelpers {
       if ctx.role == "admin" then ZIO.succeed(ctx)
       else ZIO.fail(error(Status.Forbidden, "Admin role required"))
     }
+
 }

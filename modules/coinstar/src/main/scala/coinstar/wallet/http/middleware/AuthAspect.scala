@@ -7,7 +7,9 @@ import zio.http.*
 
 object AuthAspect {
 
-  /** Extracts Authorization: Bearer <token>, verifies it, and injects Principal into ZIO environment.
+  /**
+    * Extracts Authorization: Bearer <token>, verifies it, and injects Principal into ZIO
+    * environment.
     *
     * Inspired by the official zio-http authentication example.
     */
@@ -29,4 +31,5 @@ object AuthAspect {
         }
       }
     )
+
 }

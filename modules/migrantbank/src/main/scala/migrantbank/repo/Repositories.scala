@@ -1,11 +1,11 @@
 package migrantbank.repo
 
-import com.augustnagro.magnum.*
-import migrantbank.security.TokenHash
-import migrantbank.domain.*
-
 import java.time.Instant
 import java.util.UUID
+
+import com.augustnagro.magnum.*
+import migrantbank.domain.*
+import migrantbank.security.TokenHash
 
 @Table(PostgresDbType)
 case class UserRow(
@@ -35,6 +35,7 @@ case class AccountRow(
 ) derives DbCodec
 
 object UserRepo {
+
   private val repo = Repo[UserRow, UserRow, UUID]
 
   def insert(
@@ -87,9 +88,11 @@ object UserRepo {
       .query[UserRow]
       .run()
       .toList
+
 }
 
 object SmsCodeRepo {
+
   def upsert(userId: UUID, code: String, expiresAt: Instant)(using
       DbCon
   ): Unit =
@@ -107,9 +110,11 @@ object SmsCodeRepo {
       .exists { (hash, exp) =>
         exp.isAfter(now) && hash == TokenHash.sha256Hex(code)
       }
+
 }
 
 object AccountRepo {
+
   private val repo = Repo[AccountRow, AccountRow, UUID]
 
   def findByUserForUpdate(userId: UUID)(using DbCon): Option[AccountRow] =
@@ -149,9 +154,11 @@ object AccountRepo {
       .query[AccountRow]
       .run()
       .headOption
+
 }
 
 object TransferRepo {
+
   def insert(t: Transfer)(using DbCon): Unit =
     sql"""
       INSERT INTO transfers (id, transfer_type, from_user_id, to_user_id, ach_destination, amount_minor, currency, note, status, idempotency_key, risk_flag, risk_reason, created_at)
@@ -190,9 +197,11 @@ object TransferRepo {
 
   def listFlagged(limit: Int)(using DbCon): List[Transfer] =
     List.empty // Placeholder
+
 }
 
 object RefreshTokenRepo {
+
   def insert(
       tokenId: UUID,
       userId: UUID,
@@ -212,9 +221,11 @@ object RefreshTokenRepo {
     sql"""SELECT token_id FROM refresh_tokens 
           WHERE user_id = $userId AND token_hash = $tokenHash AND revoked_at IS NULL AND expires_at > $now
           ORDER BY created_at DESC LIMIT 1""".query[UUID].run().headOption
+
 }
 
 object AuditRepo {
+
   def append(
       kind: String,
       userId: Option[UUID],
@@ -226,10 +237,12 @@ object AuditRepo {
 
   def listLatest(limit: Int)(using DbCon): List[AuditEvent] =
     List.empty // Placeholder
+
 }
 
 // Card repository
 object CardRepo {
+
   def listByUser(userId: UUID)(using DbCon): List[Card] =
     List.empty // Placeholder
 
@@ -241,12 +254,14 @@ object CardRepo {
   def updateDelivery(cardId: UUID, status: DeliveryStatus)(using DbCon): Unit =
     sql"UPDATE cards SET delivery_status = ${status.toString} WHERE id = $cardId".update
       .run(): Unit
+
 }
 
 // Family group repository
 object FamilyRepo {
+
   def create(owner: UUID, members: Set[UUID])(using DbCon): FamilyGroup = {
-    val id = UUID.randomUUID()
+    val id  = UUID.randomUUID()
     val now = Instant.now()
     // Insert logic would go here
     FamilyGroup(id, owner, members, now)
@@ -257,18 +272,22 @@ object FamilyRepo {
 
   def get(groupId: UUID)(using DbCon): Option[FamilyGroup] =
     None
+
 }
 
 // Loan repository
 object LoanRepo {
+
   def insert(loan: Loan)(using DbCon): Unit = ()
 
   def listByUser(userId: UUID)(using DbCon): List[Loan] =
     List.empty
+
 }
 
 // Ledger repository for double-entry accounting
 object LedgerRepo {
+
   def insert(
       debitAccountId: UUID,
       creditAccountId: UUID,
@@ -276,31 +295,41 @@ object LedgerRepo {
       currency: String,
       description: String
   )(using DbCon): Unit = ()
+
 }
 
 // System accounts for clearing/settlement
 object SystemAccounts {
+
   val TopupClearing: UUID =
     UUID.fromString("00000000-0000-0000-0000-000000000001")
+
   val CashClearing: UUID =
     UUID.fromString("00000000-0000-0000-0000-000000000002")
+
   val LoanFund: UUID = UUID.fromString("00000000-0000-0000-0000-000000000003")
+
   val AchClearing: UUID =
     UUID.fromString("00000000-0000-0000-0000-000000000004")
+
 }
 
 // Paycheck enrollment repository
 object PaycheckRepo {
+
   def upsert(enrollment: PaycheckEnrollment)(using DbCon): Unit = ()
 
   def get(userId: UUID)(using DbCon): Option[PaycheckEnrollment] =
     None
+
 }
 
 // Support ticket repository
 object TicketRepo {
+
   def insert(ticket: SupportTicket)(using DbCon): Unit = ()
 
   def listByUser(userId: UUID)(using DbCon): List[SupportTicket] =
     List.empty
+
 }

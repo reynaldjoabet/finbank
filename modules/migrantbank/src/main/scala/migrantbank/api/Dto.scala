@@ -1,8 +1,9 @@
 package migrantbank.api
 
+import java.util.UUID
+
 import migrantbank.domain.*
 import zio.json.*
-import java.util.UUID
 
 final case class StartRegistrationRequest(
     firstName: String,
@@ -13,11 +14,15 @@ final case class StartRegistrationRequest(
     ssn: String
 ) derives JsonEncoder,
       JsonDecoder {
+
   def toProfile: UserProfile =
     UserProfile(firstName, lastName, dateOfBirth, phone, address, ssn)
+
 }
 
-final case class StartRegistrationResponse(userId: UUID, kycStatus: KycStatus) derives JsonEncoder, JsonDecoder
+final case class StartRegistrationResponse(userId: UUID, kycStatus: KycStatus)
+    derives JsonEncoder,
+      JsonDecoder
 
 final case class ConfirmRegistrationRequest(
     userId: UUID,
@@ -36,6 +41,7 @@ final case class TopUpRequest(
     source: String
 ) derives JsonEncoder,
       JsonDecoder
+
 final case class CashDepositRequest(
     amountMinor: Long,
     currency: String,
@@ -50,6 +56,7 @@ final case class P2PTransferRequest(
     note: Option[String]
 ) derives JsonEncoder,
       JsonDecoder
+
 final case class AchTransferRequest(
     destination: String,
     amountMinor: Long,
@@ -59,6 +66,7 @@ final case class AchTransferRequest(
       JsonDecoder
 
 final case class CreateFamilyGroupRequest(memberUserIds: Set[UUID]) derives JsonEncoder, JsonDecoder
+
 final case class FamilyDistributeRequest(
     groupId: UUID,
     payouts: Map[UUID, Money]

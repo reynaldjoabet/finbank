@@ -1,39 +1,62 @@
 package migrantbank.integrations
+
 import migrantbank.domain.*
 import zio.*
 
 enum ProviderHealth derives CanEqual {
+
   case Healthy
   case Unhealthy(reason: String)
+
 }
+
 trait AlloyClient {
+
   def runKyc(profile: UserProfile): IO[AppError.ProviderUnavailable, KycStatus]
   def health: UIO[ProviderHealth]
+
 }
+
 trait VouchedClient {
+
   def verifyIdentity(
       profile: UserProfile
   ): IO[AppError.ProviderUnavailable, Boolean]
+
   def health: UIO[ProviderHealth]
+
 }
+
 trait MbanqClient {
+
   def issueVirtualCard(
       userId: java.util.UUID
   ): IO[AppError.ProviderUnavailable, Card]
+
   def orderPhysicalCard(
       userId: java.util.UUID
   ): IO[AppError.ProviderUnavailable, Card]
+
   def health: UIO[ProviderHealth]
+
 }
+
 trait SmsClient {
   def send(to: String, message: String): UIO[Unit]
 }
+
 trait EmailClient {
   def send(to: String, subject: String, body: String): UIO[Unit]
 }
+
 object DummyProviders {
 
-  private class DummyImpl extends AlloyClient with VouchedClient with MbanqClient with SmsClient with EmailClient {
+  private class DummyImpl
+      extends AlloyClient
+      with VouchedClient
+      with MbanqClient
+      with SmsClient
+      with EmailClient {
 
     override def runKyc(
         profile: UserProfile
@@ -49,8 +72,8 @@ object DummyProviders {
         userId: java.util.UUID
     ): IO[AppError.ProviderUnavailable, Card] =
       for {
-        id <- Random.nextUUID
-        now <- Clock.instant
+        id    <- Random.nextUUID
+        now   <- Clock.instant
         last4 <- Random.nextIntBetween(0, 10000).map(n => f"$n%04d")
       } yield Card(
         id,
@@ -66,8 +89,8 @@ object DummyProviders {
         userId: java.util.UUID
     ): IO[AppError.ProviderUnavailable, Card] =
       for {
-        id <- Random.nextUUID
-        now <- Clock.instant
+        id    <- Random.nextUUID
+        now   <- Clock.instant
         last4 <- Random.nextIntBetween(0, 10000).map(n => f"$n%04d")
       } yield Card(
         id,
@@ -91,6 +114,7 @@ object DummyProviders {
 
     override def health: UIO[ProviderHealth] =
       ZIO.succeed(ProviderHealth.Healthy)
+
   }
 
   private val impl = new DummyImpl
@@ -110,11 +134,14 @@ object DummyProviders {
   val emailLayer: ZLayer[Any, Nothing, EmailClient] =
     ZLayer.succeed[EmailClient](impl)
 
-  /** Replace with real HTTP clients in production. */
+  /**
+    * Replace with real HTTP clients in production.
+    */
   val layer: ZLayer[
     Any,
     Nothing,
     AlloyClient & VouchedClient & MbanqClient & SmsClient & EmailClient
   ] =
     alloyLayer ++ vouchedLayer ++ mbanqLayer ++ smsLayer ++ emailLayer
+
 }

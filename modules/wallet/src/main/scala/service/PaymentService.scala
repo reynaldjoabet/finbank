@@ -1,11 +1,13 @@
 package service
 
+import java.time.Instant
+
 import domain.*
 import repo.*
 import zio.*
-import java.time.Instant
 
 trait PaymentService {
+
   def createInvoice(
       merchantId: MerchantId,
       reference: String,
@@ -21,12 +23,15 @@ trait PaymentService {
       callbackUrl: String
   ): IO[AppError, PaymentIntent]
 
-  /** Webhook entrypoint (idempotent, signature verified, ledger-safe). */
+  /**
+    * Webhook entrypoint (idempotent, signature verified, ledger-safe).
+    */
   def handleWebhook(
       provider: Provider,
       headers: Map[String, String],
       rawBody: String
   ): IO[AppError, Unit]
+
 }
 
 final case class PaymentServiceLive(
@@ -76,53 +81,53 @@ final case class PaymentServiceLive(
   ): IO[AppError, PaymentIntent] = {
     for {
       existing <- paymentRepo.getByIdempotency(merchantId, idempotencyKey)
-      intent <- existing match {
-        case Some(already) =>
-          ZIO.succeed(already)
+      intent   <- existing match {
+                  case Some(already) =>
+                    ZIO.succeed(already)
 
-        case None =>
-          for {
-            invoice <- invoiceRepo.get(invoiceId)
-            _ <- ZIO
-              .fail(AppError.Conflict("Invoice already paid"))
-              .when(invoice.status == InvoiceStatus.Paid)
+                  case None =>
+                    for {
+                      invoice <- invoiceRepo.get(invoiceId)
+                      _       <- ZIO
+                             .fail(AppError.Conflict("Invoice already paid"))
+                             .when(invoice.status == InvoiceStatus.Paid)
 
-            pid = PaymentId.random
-            initial = PaymentIntent(
-              id = pid,
-              invoiceId = invoiceId,
-              merchantId = merchantId,
-              provider = provider,
-              amount = Money(
-                invoice.total.amountMinor - invoice.paid.amountMinor,
-                invoice.total.currency
-              ),
-              externalRef = None,
-              status = PaymentStatus.Initiated,
-              idempotencyKey = idempotencyKey,
-              createdAt = Instant.now()
-            )
+                      pid     = PaymentId.random
+                      initial = PaymentIntent(
+                                  id = pid,
+                                  invoiceId = invoiceId,
+                                  merchantId = merchantId,
+                                  provider = provider,
+                                  amount = Money(
+                                    invoice.total.amountMinor - invoice.paid.amountMinor,
+                                    invoice.total.currency
+                                  ),
+                                  externalRef = None,
+                                  status = PaymentStatus.Initiated,
+                                  idempotencyKey = idempotencyKey,
+                                  createdAt = Instant.now()
+                                )
 
-            _ <- paymentRepo.create(initial)
+                      _ <- paymentRepo.create(initial)
 
-            c <- client(provider)
-            resp <- c.initiatePayment(
-              InitiatePaymentRequest(
-                amount = initial.amount,
-                customerMsisdn = invoice.customerMsisdn,
-                narrative = s"Invoice ${invoice.reference}",
-                callbackUrl = callbackUrl,
-                merchantReference = initial.id.toString
-              )
-            )
+                      c    <- client(provider)
+                      resp <- c.initiatePayment(
+                                InitiatePaymentRequest(
+                                  amount = initial.amount,
+                                  customerMsisdn = invoice.customerMsisdn,
+                                  narrative = s"Invoice ${invoice.reference}",
+                                  callbackUrl = callbackUrl,
+                                  merchantReference = initial.id.toString
+                                )
+                              )
 
-            updated = initial.copy(
-              externalRef = Some(resp.externalRef),
-              status = PaymentStatus.PendingProvider
-            )
-            _ <- paymentRepo.update(updated)
-          } yield updated
-      }
+                      updated = initial.copy(
+                                  externalRef = Some(resp.externalRef),
+                                  status = PaymentStatus.PendingProvider
+                                )
+                      _ <- paymentRepo.update(updated)
+                    } yield updated
+                }
     } yield intent
   }
 
@@ -132,76 +137,78 @@ final case class PaymentServiceLive(
       rawBody: String
   ): IO[AppError, Unit] = {
     for {
-      c <- client(provider)
-      _ <- c.verifyWebhook(headers, rawBody)
+      c  <- client(provider)
+      _  <- c.verifyWebhook(headers, rawBody)
       wh <- c.parseWebhook(rawBody)
 
       // Prevent duplicate processing
       existing <- paymentRepo.getByExternalRef(provider, wh.externalRef)
 
       _ <- existing match {
-        case None =>
-          ZIO.fail(
-            AppError.NotFound(
-              s"No payment intent found for externalRef=${wh.externalRef}"
-            )
-          )
+             case None =>
+               ZIO.fail(
+                 AppError.NotFound(
+                   s"No payment intent found for externalRef=${wh.externalRef}"
+                 )
+               )
 
-        case Some(intent) if intent.status == PaymentStatus.Succeeded =>
-          ZIO.unit // idempotent: already processed successfully
+             case Some(intent) if intent.status == PaymentStatus.Succeeded =>
+               ZIO.unit // idempotent: already processed successfully
 
-        case Some(intent) =>
-          val succeeded = wh.rawStatus.equalsIgnoreCase(
-            "SUCCESS"
-          ) || wh.rawStatus.equalsIgnoreCase("SUCCEEDED")
+             case Some(intent) =>
+               val succeeded = wh.rawStatus.equalsIgnoreCase(
+                 "SUCCESS"
+               ) || wh.rawStatus.equalsIgnoreCase("SUCCEEDED")
 
-          if (!succeeded) {
-            val failed = intent.copy(status = PaymentStatus.Failed)
-            paymentRepo.update(failed).unit
-          } else {
-            for {
-              invoice <- invoiceRepo.get(intent.invoiceId)
+               if (!succeeded) {
+                 val failed = intent.copy(status = PaymentStatus.Failed)
+                 paymentRepo.update(failed).unit
+               } else {
+                 for {
+                   invoice <- invoiceRepo.get(intent.invoiceId)
 
-              // Update invoice paid amount; clamp to total
-              newPaidMinor = Math.min(
-                invoice.total.amountMinor,
-                invoice.paid.amountMinor + wh.amount.amountMinor
-              )
-              newStatus =
-                if (newPaidMinor >= invoice.total.amountMinor)
-                  InvoiceStatus.Paid
-                else InvoiceStatus.PartiallyPaid
+                   // Update invoice paid amount; clamp to total
+                   newPaidMinor = Math.min(
+                                    invoice.total.amountMinor,
+                                    invoice.paid.amountMinor + wh.amount.amountMinor
+                                  )
+                   newStatus =
+                     if (newPaidMinor >= invoice.total.amountMinor)
+                       InvoiceStatus.Paid
+                     else InvoiceStatus.PartiallyPaid
 
-              updatedInvoice = invoice.copy(
-                paid = Money(newPaidMinor, invoice.total.currency),
-                status = newStatus
-              )
+                   updatedInvoice = invoice.copy(
+                                      paid = Money(newPaidMinor, invoice.total.currency),
+                                      status = newStatus
+                                    )
 
-              _ <- invoiceRepo.update(updatedInvoice)
+                   _ <- invoiceRepo.update(updatedInvoice)
 
-              // Ledger entry: credit merchant
-              _ <- ledgerRepo.append(
-                LedgerEntry(
-                  merchantId = intent.merchantId,
-                  invoiceId = intent.invoiceId,
-                  paymentId = intent.id,
-                  entryType = LedgerEntryType.Credit,
-                  amount = wh.amount,
-                  createdAt = Instant.now()
-                )
-              )
+                   // Ledger entry: credit merchant
+                   _ <- ledgerRepo.append(
+                          LedgerEntry(
+                            merchantId = intent.merchantId,
+                            invoiceId = intent.invoiceId,
+                            paymentId = intent.id,
+                            entryType = LedgerEntryType.Credit,
+                            amount = wh.amount,
+                            createdAt = Instant.now()
+                          )
+                        )
 
-              _ <- paymentRepo.update(
-                intent.copy(status = PaymentStatus.Succeeded)
-              )
-            } yield ()
-          }
-      }
+                   _ <- paymentRepo.update(
+                          intent.copy(status = PaymentStatus.Succeeded)
+                        )
+                 } yield ()
+               }
+           }
     } yield ()
   }
+
 }
 
 object PaymentServiceLive {
+
   val layer: ZLayer[
     InvoiceRepo & PaymentRepo & LedgerRepo & Set[MobileMoneyClient],
     Nothing,
@@ -211,10 +218,11 @@ object PaymentServiceLive {
       for {
         invoiceRepo <- ZIO.service[InvoiceRepo]
         paymentRepo <- ZIO.service[PaymentRepo]
-        ledgerRepo <- ZIO.service[LedgerRepo]
-        setClients <- ZIO.service[Set[MobileMoneyClient]]
-        clients = setClients.map(c => c.provider -> c).toMap
+        ledgerRepo  <- ZIO.service[LedgerRepo]
+        setClients  <- ZIO.service[Set[MobileMoneyClient]]
+        clients      = setClients.map(c => c.provider -> c).toMap
       } yield PaymentServiceLive(invoiceRepo, paymentRepo, ledgerRepo, clients)
     }
   }
+
 }

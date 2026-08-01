@@ -1,4 +1,5 @@
 package revenue.domain
+
 import zio.json.*
 import revenue.domain.ids.*
 

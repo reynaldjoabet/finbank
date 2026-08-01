@@ -9,7 +9,7 @@ object Main extends ZIOAppDefault {
   val program = for {
     engine <- ZIO.service[BillingService]
     result <- engine.processNewOrder(2500.00, "finance@global-tech.com")
-    _ <- Console.printLine(s"Successfully processed invoice: ${result.id}")
+    _      <- Console.printLine(s"Successfully processed invoice: ${result.id}")
   } yield ()
 
   override def run = program.provide(
@@ -18,4 +18,5 @@ object Main extends ZIOAppDefault {
     PlaidService.layer,
     AccountingSync.layer
   )
+
 }

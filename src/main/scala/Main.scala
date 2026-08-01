@@ -1,6 +1,7 @@
 import com.github.plokhotnyuk.jsoniter_scala.core.*
 
 object Main {
+
 //Runtime: ReaderConfig + WriterConfig
 // Fastest reader config for production
   val productionReaderConfig: ReaderConfig = ReaderConfig
@@ -22,8 +23,8 @@ object Main {
 
 // Fastest writer config for production
   val productionWriterConfig: WriterConfig = WriterConfig
-    .withIndentionStep(0) // compact JSON (default, keep it)
-    .withEscapeUnicode(false) // allow raw UTF-8 (default, keep it)
+    .withIndentionStep(0)        // compact JSON (default, keep it)
+    .withEscapeUnicode(false)    // allow raw UTF-8 (default, keep it)
     .withPreferredBufSize(65536) // 64KB: avoids intermediate buffer growth
 
 // . Compile-time: CodecMakerConfig
@@ -34,10 +35,10 @@ object Main {
   given CodecMakerConfig = CodecMakerConfig
     .withSkipUnexpectedFields(
       true
-    ) // silently ignore unknown JSON fields (default)
-    .withTransientDefault(true) // omit fields equal to their default (default)
-    .withTransientEmpty(true) // omit empty collections (default)
-    .withTransientNone(true) // omit None fields (default)
+    )                                 // silently ignore unknown JSON fields (default)
+    .withTransientDefault(true)       // omit fields equal to their default (default)
+    .withTransientEmpty(true)         // omit empty collections (default)
+    .withTransientNone(true)          // omit None fields (default)
     .withCheckFieldDuplication(false) // skip duplicate-field check at runtime
     .withRequireDiscriminatorFirst(
       true
@@ -73,6 +74,7 @@ object Main {
     .withThrowWriterExceptionWithStackTrace(false)
     // Tune to your typical serialized output size
     .withPreferredBufSize(32768)
+
   val fintechCodecConfig: CodecMakerConfig = CodecMakerConfig
     // CRITICAL: reject unknown fields — strict schema validation
     .withSkipUnexpectedFields(false)

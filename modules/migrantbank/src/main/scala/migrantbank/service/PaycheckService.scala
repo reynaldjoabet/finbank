@@ -1,21 +1,26 @@
 package migrantbank.service
 
+import java.util.UUID
+
 import migrantbank.db.Db
 import migrantbank.domain.*
 import migrantbank.repo.*
 import zio.*
-import java.util.UUID
 
 trait PaycheckService {
+
   def enroll(
       userId: UUID,
       employerName: String,
       correlationId: String
   ): IO[AppError, PaycheckEnrollment]
+
   def get(userId: UUID): IO[AppError, Option[PaycheckEnrollment]]
+
 }
 
 object PaycheckService {
+
   val live: ZLayer[Db, Nothing, PaycheckService] =
     ZLayer.fromFunction { (db: Db) =>
       new PaycheckService {
@@ -29,18 +34,18 @@ object PaycheckService {
           else
             for {
               now <- Clock.instant
-              id <- Random.nextUUID
-              ref = id.toString
-              e = PaycheckEnrollment(userId, employerName, ref, now)
-              _ <- db.transaction {
-                PaycheckRepo.upsert(e)
-                AuditRepo.append(
-                  "paycheck_enrolled",
-                  Some(userId),
-                  correlationId,
-                  s"employer=$employerName"
-                )
-              }
+              id  <- Random.nextUUID
+              ref  = id.toString
+              e    = PaycheckEnrollment(userId, employerName, ref, now)
+              _   <- db.transaction {
+                     PaycheckRepo.upsert(e)
+                     AuditRepo.append(
+                       "paycheck_enrolled",
+                       Some(userId),
+                       correlationId,
+                       s"employer=$employerName"
+                     )
+                   }
             } yield e
 
         override def get(
@@ -51,4 +56,5 @@ object PaycheckService {
           }
       }
     }
+
 }

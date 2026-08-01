@@ -6,25 +6,31 @@ import revenue.domain.ids.*
 import revenue.repo.*
 
 trait RefundService {
+
   def create(
       req: RefundClaimCreate,
       principal: Principal
   ): IO[ApiError, RefundClaim]
+
   def get(id: RefundId, principal: Principal): IO[ApiError, RefundClaim]
+
   def listByTaxpayer(
       taxpayerId: TaxpayerId,
       principal: Principal
   ): IO[ApiError, List[RefundClaim]]
+
   def approve(
       id: RefundId,
       decision: RefundDecision,
       principal: Principal
   ): IO[ApiError, RefundClaim]
+
   def reject(
       id: RefundId,
       decision: RefundDecision,
       principal: Principal
   ): IO[ApiError, RefundClaim]
+
 }
 
 object RefundService {
@@ -32,7 +38,7 @@ object RefundService {
   val live: URLayer[RefundRepo & AuditService & Clock, RefundService] =
     ZLayer.fromZIO {
       for {
-        repo <- ZIO.service[RefundRepo]
+        repo  <- ZIO.service[RefundRepo]
         audit <- ZIO.service[AuditService]
         clock <- ZIO.service[Clock]
       } yield new RefundService {
@@ -42,28 +48,28 @@ object RefundService {
             principal: Principal
         ): IO[ApiError, RefundClaim] = {
           for {
-            now <- clock.instant.map(_.toEpochMilli)
-            id <- Random.nextUUID.map(u => RefundId(u.toString))
+            now  <- clock.instant.map(_.toEpochMilli)
+            id   <- Random.nextUUID.map(u => RefundId(u.toString))
             claim = RefundClaim(
-              id = id,
-              taxpayerId = req.taxpayerId,
-              taxType = req.taxType,
-              period = req.period,
-              amount = req.amount,
-              currency = req.currency,
-              reason = req.reason,
-              status = RefundStatus.Submitted,
-              createdAtEpochMs = now,
-              updatedAtEpochMs = now
-            )
+                      id = id,
+                      taxpayerId = req.taxpayerId,
+                      taxType = req.taxType,
+                      period = req.period,
+                      amount = req.amount,
+                      currency = req.currency,
+                      reason = req.reason,
+                      status = RefundStatus.Submitted,
+                      createdAtEpochMs = now,
+                      updatedAtEpochMs = now
+                    )
             saved <- repo.create(claim).mapError(ApiError.fromRepo)
-            _ <- audit.record(
-              principal,
-              "REFUND_CLAIM_SUBMITTED",
-              "Refund",
-              saved.id.value,
-              s"${saved.amount} ${saved.currency}"
-            )
+            _     <- audit.record(
+                   principal,
+                   "REFUND_CLAIM_SUBMITTED",
+                   "Refund",
+                   saved.id.value,
+                   s"${saved.amount} ${saved.currency}"
+                 )
           } yield saved
         }
 
@@ -93,20 +99,20 @@ object RefundService {
         ): IO[ApiError, RefundClaim] = {
           for {
             prev <- get(id, principal)
-            now <- clock.instant.map(_.toEpochMilli)
+            now  <- clock.instant.map(_.toEpochMilli)
             next <- repo
-              .update(
-                prev
-                  .copy(status = RefundStatus.Approved, updatedAtEpochMs = now)
-              )
-              .mapError(ApiError.fromRepo)
+                      .update(
+                        prev
+                          .copy(status = RefundStatus.Approved, updatedAtEpochMs = now)
+                      )
+                      .mapError(ApiError.fromRepo)
             _ <- audit.record(
-              principal,
-              "REFUND_APPROVED",
-              "Refund",
-              next.id.value,
-              decision.reason.getOrElse("-")
-            )
+                   principal,
+                   "REFUND_APPROVED",
+                   "Refund",
+                   next.id.value,
+                   decision.reason.getOrElse("-")
+                 )
           } yield next
         }
 
@@ -117,22 +123,23 @@ object RefundService {
         ): IO[ApiError, RefundClaim] = {
           for {
             prev <- get(id, principal)
-            now <- clock.instant.map(_.toEpochMilli)
+            now  <- clock.instant.map(_.toEpochMilli)
             next <- repo
-              .update(
-                prev
-                  .copy(status = RefundStatus.Rejected, updatedAtEpochMs = now)
-              )
-              .mapError(ApiError.fromRepo)
+                      .update(
+                        prev
+                          .copy(status = RefundStatus.Rejected, updatedAtEpochMs = now)
+                      )
+                      .mapError(ApiError.fromRepo)
             _ <- audit.record(
-              principal,
-              "REFUND_REJECTED",
-              "Refund",
-              next.id.value,
-              decision.reason.getOrElse("-")
-            )
+                   principal,
+                   "REFUND_REJECTED",
+                   "Refund",
+                   next.id.value,
+                   decision.reason.getOrElse("-")
+                 )
           } yield next
         }
       }
     }
+
 }

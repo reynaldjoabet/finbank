@@ -1,5 +1,7 @@
 package tontine.config
+
 import zio.config.magnolia.*
+
 final case class AppConfig(
     server: ServerConfig,
     mobileMoney: MobileMoneyConfig,
@@ -18,6 +20,7 @@ final case class OpenBankingConfig(
     clientId: String,
     clientSecret: String
 )
+
 // add other configs
 final case class PostgresConfig(
     url: String,

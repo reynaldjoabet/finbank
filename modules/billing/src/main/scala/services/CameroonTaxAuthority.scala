@@ -1,15 +1,21 @@
 package services
+
+import java.time.OffsetDateTime
+
 import domain.Invoice
 import zio.*
-import java.time.OffsetDateTime
 import domain.CameroonTaxAuthorityInvoiceReport
 import zio.json.EncoderOps
+
 trait CameroonTaxAuthority {
+
   def registerInvoice(invoice: Invoice): Task[Unit]
   def reportTransaction(invoice: Invoice, txnRef: String): Task[Unit]
+
 }
 
 case class DGITaxSync(dgiApi: String) extends CameroonTaxAuthority {
+
   // 2026 Law Requirement: Continuous digital control
   override def registerInvoice(invoice: Invoice): Task[Unit] = {
     ZIO
@@ -21,6 +27,7 @@ case class DGITaxSync(dgiApi: String) extends CameroonTaxAuthority {
       }
       .retry(Schedule.exponential(500.millis) && Schedule.recurs(3))
   }
+
   override def reportTransaction(
       invoice: Invoice,
       txnRef: String
@@ -39,7 +46,7 @@ case class DGITaxSync(dgiApi: String) extends CameroonTaxAuthority {
     )
 
     for {
-      _ <- ZIO.logInfo(s"Reporting to DGI CPF: ${report.invoiceNumber}")
+      _       <- ZIO.logInfo(s"Reporting to DGI CPF: ${report.invoiceNumber}")
       jsonBody = report.toJson
       // In production: sttp.client3.basicRequest.post(uri"$apiUrl").body(jsonBody)...
       _ <- ZIO.attempt(println(s"DGI PAYLOAD: $jsonBody"))
@@ -50,6 +57,8 @@ case class DGITaxSync(dgiApi: String) extends CameroonTaxAuthority {
 }
 
 object CameroonTaxAuthority {
+
   val layer: URLayer[String, CameroonTaxAuthority] =
     ZLayer.fromFunction(DGITaxSync.apply _)
+
 }

@@ -1,20 +1,22 @@
 package migrantbank.service
 
+import java.util.UUID
+
 import migrantbank.domain.{*, given}
 import zio.*
 
-import java.util.UUID
-
-/** Credit band derived from alternative data (tontine history + MoMo activity).
+/**
+  * Credit band derived from alternative data (tontine history + MoMo activity).
   *
-  * Thin → no formal history; micro-loan only Fair → some history; standard micro-loan Good → solid history; upgraded
-  * limits Strong → excellent track record; best rates
+  * Thin → no formal history; micro-loan only Fair → some history; standard micro-loan Good → solid
+  * history; upgraded limits Strong → excellent track record; best rates
   */
 enum CreditBand derives CanEqual, zio.json.JsonCodec {
   case Thin, Fair, Good, Strong
 }
 
-/** Parameters associated with a credit band.
+/**
+  * Parameters associated with a credit band.
   *
   * @param maxLoanMinor
   *   Maximum loan principal in minor units (USD cents).
@@ -33,7 +35,8 @@ final case class BandParams(
     collateralReq: Boolean
 ) derives zio.json.JsonCodec
 
-/** Credit score result combining tontine contribution data with MoMo activity.
+/**
+  * Credit score result combining tontine contribution data with MoMo activity.
   */
 final case class CreditScore(
     userId: UUID,
@@ -45,29 +48,34 @@ final case class CreditScore(
     computedAt: java.time.Instant
 ) derives zio.json.JsonCodec
 
-/** Alternative credit scoring service.
+/**
+  * Alternative credit scoring service.
   *
   * Uses:
-  *   1. **Tontine contribution history** — on-time rate from the njangi circle (imported as a portable JSON credential
-  *      via `ScoreService.exportSignedCredential`).
-  *   2. **MoMo transaction history** — volume and frequency of mobile money transactions (a proxy for economic
-  *      activity).
+  *   1. **Tontine contribution history** — on-time rate from the njangi circle (imported as a
+  *      portable JSON credential via `ScoreService.exportSignedCredential`).
+  *   2. **MoMo transaction history** — volume and frequency of mobile money transactions (a proxy
+  *      for economic activity).
   *
-  * This is the service that replaces formal credit bureaus for the ~60 % of African adults who have no bank-reportable
-  * credit history.
+  * This is the service that replaces formal credit bureaus for the ~60 % of African adults who have
+  * no bank-reportable credit history.
   */
 trait CreditScoringService {
+
   def score(userId: UUID): IO[AppError, CreditScore]
   def bandParams(band: CreditBand): BandParams
+
 }
 
 object CreditScoringService {
 
-  /** Band → parameters lookup table. */
+  /**
+    * Band → parameters lookup table.
+    */
   val Params: Map[CreditBand, BandParams] = Map(
-    CreditBand.Thin -> BandParams(CreditBand.Thin, 2_000_00L, 3600, 14, true),
-    CreditBand.Fair -> BandParams(CreditBand.Fair, 5_000_00L, 2400, 30, false),
-    CreditBand.Good -> BandParams(CreditBand.Good, 15_000_00L, 1800, 60, false),
+    CreditBand.Thin   -> BandParams(CreditBand.Thin, 2_000_00L, 3600, 14, true),
+    CreditBand.Fair   -> BandParams(CreditBand.Fair, 5_000_00L, 2400, 30, false),
+    CreditBand.Good   -> BandParams(CreditBand.Good, 15_000_00L, 1800, 60, false),
     CreditBand.Strong -> BandParams(
       CreditBand.Strong,
       50_000_00L,
@@ -110,8 +118,8 @@ object CreditScoringService {
           for {
             // Use existing loan/transfer history as a proxy for MoMo activity.
             // Production: also call MoMo provider API for transaction history.
-            txList <- loans.list(userId)
-            txCount = txList.size
+            txList     <- loans.list(userId)
+            txCount     = txList.size
             volumeMinor = txList.map(_.principal.amountMinor).sum
 
             // Tontine score: in production, fetch the signed credential from
@@ -134,4 +142,5 @@ object CreditScoringService {
           Params(band)
       }
     }
+
 }

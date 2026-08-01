@@ -7,6 +7,7 @@ import zio.*
 trait Monitoring {
   def start: UIO[Unit]
 }
+
 object Monitoring {
 
   val live: ZLayer[
@@ -50,4 +51,5 @@ object Monitoring {
               .unit
         }
     }
+
 }

@@ -6,12 +6,15 @@ import revenue.domain.ids.*
 import revenue.repo.*
 
 trait ObjectionService {
+
   def create(
       req: ObjectionCreate,
       principal: Principal
   ): IO[ApiError, Objection]
+
   def get(id: ObjectionId, principal: Principal): IO[ApiError, Objection]
   def withdraw(id: ObjectionId, principal: Principal): IO[ApiError, Objection]
+
 }
 
 object ObjectionService {
@@ -19,7 +22,7 @@ object ObjectionService {
   val live: URLayer[ObjectionRepo & AuditService & Clock, ObjectionService] =
     ZLayer.fromZIO {
       for {
-        repo <- ZIO.service[ObjectionRepo]
+        repo  <- ZIO.service[ObjectionRepo]
         audit <- ZIO.service[AuditService]
         clock <- ZIO.service[Clock]
       } yield new ObjectionService {
@@ -30,25 +33,25 @@ object ObjectionService {
         ): IO[ApiError, Objection] = {
           for {
             now <- clock.instant.map(_.toEpochMilli)
-            id <- Random.nextUUID.map(u => ObjectionId(u.toString))
-            o = Objection(
-              id,
-              req.taxpayerId,
-              req.referenceType,
-              req.referenceId,
-              req.grounds,
-              ObjectionStatus.Submitted,
-              now,
-              now
-            )
+            id  <- Random.nextUUID.map(u => ObjectionId(u.toString))
+            o    = Objection(
+                  id,
+                  req.taxpayerId,
+                  req.referenceType,
+                  req.referenceId,
+                  req.grounds,
+                  ObjectionStatus.Submitted,
+                  now,
+                  now
+                )
             saved <- repo.create(o).mapError(ApiError.fromRepo)
-            _ <- audit.record(
-              principal,
-              "OBJECTION_SUBMITTED",
-              "Objection",
-              saved.id.value,
-              s"${saved.referenceType}:${saved.referenceId}"
-            )
+            _     <- audit.record(
+                   principal,
+                   "OBJECTION_SUBMITTED",
+                   "Objection",
+                   saved.id.value,
+                   s"${saved.referenceType}:${saved.referenceId}"
+                 )
           } yield saved
         }
 
@@ -73,24 +76,25 @@ object ObjectionService {
         ): IO[ApiError, Objection] = {
           for {
             prev <- get(id, principal)
-            now <- clock.instant.map(_.toEpochMilli)
+            now  <- clock.instant.map(_.toEpochMilli)
             next <- repo
-              .update(
-                prev.copy(
-                  status = ObjectionStatus.Withdrawn,
-                  updatedAtEpochMs = now
-                )
-              )
-              .mapError(ApiError.fromRepo)
+                      .update(
+                        prev.copy(
+                          status = ObjectionStatus.Withdrawn,
+                          updatedAtEpochMs = now
+                        )
+                      )
+                      .mapError(ApiError.fromRepo)
             _ <- audit.record(
-              principal,
-              "OBJECTION_WITHDRAWN",
-              "Objection",
-              next.id.value,
-              "withdrawn"
-            )
+                   principal,
+                   "OBJECTION_WITHDRAWN",
+                   "Objection",
+                   next.id.value,
+                   "withdrawn"
+                 )
           } yield next
         }
       }
     }
+
 }

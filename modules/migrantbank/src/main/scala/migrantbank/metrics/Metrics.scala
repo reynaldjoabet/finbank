@@ -3,10 +3,14 @@ package migrantbank.metrics
 import zio.*
 
 trait Metrics {
+
   def inc(name: String): UIO[Unit]
   def snapshot: UIO[Map[String, Long]]
+
 }
+
 object Metrics {
+
   val live: ZLayer[Any, Nothing, Metrics] =
     ZLayer.fromZIO(Ref.make(Map.empty[String, Long]).map { ref =>
       new Metrics {
@@ -17,4 +21,5 @@ object Metrics {
           ref.get
       }
     })
+
 }

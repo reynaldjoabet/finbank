@@ -1,32 +1,36 @@
 package migrantbank.service
 
-import migrantbank.config.AppConfig
-import migrantbank.db.Db
-import migrantbank.domain.*
-import migrantbank.repo.*
-import migrantbank.security.*
-import migrantbank.ratelimit.RateLimiter
-import zio.*
-
 import java.time.Instant
 import java.util.UUID
 
+import migrantbank.config.AppConfig
+import migrantbank.db.Db
+import migrantbank.domain.*
+import migrantbank.ratelimit.RateLimiter
+import migrantbank.repo.*
+import migrantbank.security.*
+import zio.*
+
 trait AuthService {
+
   def login(
       phone: String,
       password: String,
       correlationId: String
   ): IO[AppError, AuthTokens]
+
   def refresh(
       userId: UUID,
       refreshToken: String,
       correlationId: String
   ): IO[AppError, AuthTokens]
+
   def logout(
       userId: UUID,
       refreshToken: String,
       correlationId: String
   ): IO[AppError, Unit]
+
 }
 
 object AuthService {
@@ -55,41 +59,41 @@ object AuthService {
               correlationId: String
           ): IO[AppError, AuthTokens] =
             for {
-              _ <- rl.check(s"login:$phone", cfg.rateLimit.loginPerMinute)
+              _    <- rl.check(s"login:$phone", cfg.rateLimit.loginPerMinute)
               user <- db
-                .query {
-                  UserRepo.findByPhone(phone)
-                }
-                .flatMap {
-                  case Some(u) => ZIO.succeed(u)
-                  case None    =>
-                    ZIO.fail(AppError.Unauthorized("Invalid credentials"))
-                }
+                        .query {
+                          UserRepo.findByPhone(phone)
+                        }
+                        .flatMap {
+                          case Some(u) => ZIO.succeed(u)
+                          case None    =>
+                            ZIO.fail(AppError.Unauthorized("Invalid credentials"))
+                        }
               hash <- ZIO
-                .fromOption(user.passwordHash)
-                .orElseFail(AppError.Unauthorized("Password not set"))
+                        .fromOption(user.passwordHash)
+                        .orElseFail(AppError.Unauthorized("Password not set"))
               ok <- hasher.verify(password, hash)
-              _ <- ZIO
-                .fail(AppError.Unauthorized("Invalid credentials"))
-                .unless(ok)
-              access <- jwt.issueAccess(user.id, user.role)
+              _  <- ZIO
+                     .fail(AppError.Unauthorized("Invalid credentials"))
+                     .unless(ok)
+              access     <- jwt.issueAccess(user.id, user.role)
               refreshRaw <- jwt.issueRefresh()
-              now <- Clock.instant
-              tokenId <- Random.nextUUID
-              _ <- db.transaction {
-                RefreshTokenRepo.insert(
-                  tokenId,
-                  user.id,
-                  TokenHash.sha256Hex(refreshRaw),
-                  refreshExpiry(now)
-                )
-                AuditRepo.append(
-                  "auth_login",
-                  Some(user.id),
-                  correlationId,
-                  "login"
-                )
-              }
+              now        <- Clock.instant
+              tokenId    <- Random.nextUUID
+              _          <- db.transaction {
+                     RefreshTokenRepo.insert(
+                       tokenId,
+                       user.id,
+                       TokenHash.sha256Hex(refreshRaw),
+                       refreshExpiry(now)
+                     )
+                     AuditRepo.append(
+                       "auth_login",
+                       Some(user.id),
+                       correlationId,
+                       "login"
+                     )
+                   }
             } yield AuthTokens(access, refreshRaw)
 
           override def refresh(
@@ -98,37 +102,37 @@ object AuthService {
               correlationId: String
           ): IO[AppError, AuthTokens] =
             for {
-              now <- Clock.instant
-              tokenHash = TokenHash.sha256Hex(refreshToken)
+              now          <- Clock.instant
+              tokenHash     = TokenHash.sha256Hex(refreshToken)
               maybeTokenId <- db.query {
-                RefreshTokenRepo.findValid(userId, tokenHash, now)
-              }
+                                RefreshTokenRepo.findValid(userId, tokenHash, now)
+                              }
               tokenId <- ZIO
-                .fromOption(maybeTokenId)
-                .orElseFail(AppError.Unauthorized("Invalid refresh token"))
-              user <- db.query { UserRepo.findById(userId) }.flatMap {
-                case Some(u) => ZIO.succeed(u)
-                case None    =>
-                  ZIO.fail(AppError.NotFound(s"User $userId not found"))
-              }
-              access <- jwt.issueAccess(userId, user.role)
+                           .fromOption(maybeTokenId)
+                           .orElseFail(AppError.Unauthorized("Invalid refresh token"))
+              user <- db.query(UserRepo.findById(userId)).flatMap {
+                        case Some(u) => ZIO.succeed(u)
+                        case None    =>
+                          ZIO.fail(AppError.NotFound(s"User $userId not found"))
+                      }
+              access     <- jwt.issueAccess(userId, user.role)
               newRefresh <- jwt.issueRefresh()
               newTokenId <- Random.nextUUID
-              _ <- db.transaction {
-                RefreshTokenRepo.revoke(tokenId)
-                RefreshTokenRepo.insert(
-                  newTokenId,
-                  userId,
-                  TokenHash.sha256Hex(newRefresh),
-                  refreshExpiry(now)
-                )
-                AuditRepo.append(
-                  "auth_refresh",
-                  Some(userId),
-                  correlationId,
-                  "refresh rotated"
-                )
-              }
+              _          <- db.transaction {
+                     RefreshTokenRepo.revoke(tokenId)
+                     RefreshTokenRepo.insert(
+                       newTokenId,
+                       userId,
+                       TokenHash.sha256Hex(newRefresh),
+                       refreshExpiry(now)
+                     )
+                     AuditRepo.append(
+                       "auth_refresh",
+                       Some(userId),
+                       correlationId,
+                       "refresh rotated"
+                     )
+                   }
             } yield AuthTokens(access, newRefresh)
 
           override def logout(
@@ -137,26 +141,27 @@ object AuthService {
               correlationId: String
           ): IO[AppError, Unit] =
             for {
-              now <- Clock.instant
-              tokenHash = TokenHash.sha256Hex(refreshToken)
+              now          <- Clock.instant
+              tokenHash     = TokenHash.sha256Hex(refreshToken)
               maybeTokenId <- db.query {
-                RefreshTokenRepo.findValid(userId, tokenHash, now)
-              }
+                                RefreshTokenRepo.findValid(userId, tokenHash, now)
+                              }
               _ <- maybeTokenId match {
-                case Some(id) =>
-                  db.transaction {
-                    RefreshTokenRepo.revoke(id)
-                    AuditRepo.append(
-                      "auth_logout",
-                      Some(userId),
-                      correlationId,
-                      "logout"
-                    )
-                  }
-                case None =>
-                  ZIO.unit
-              }
+                     case Some(id) =>
+                       db.transaction {
+                         RefreshTokenRepo.revoke(id)
+                         AuditRepo.append(
+                           "auth_logout",
+                           Some(userId),
+                           correlationId,
+                           "logout"
+                         )
+                       }
+                     case None =>
+                       ZIO.unit
+                   }
             } yield ()
         }
     }
+
 }

@@ -1,17 +1,22 @@
 package migrantbank.webhook
-import migrantbank.domain.AppError
-import zio.*
-import zio.json.*
+
 import java.time.Instant
 import java.util.UUID
 
+import migrantbank.domain.AppError
+import zio.*
+import zio.json.*
+
 // ── Domain events ────────────────────────────────────────────────────────────
 
-/** Typed domain events emitted by finbank services.
+/**
+  * Typed domain events emitted by finbank services.
   *
-  * Each event carries enough context for a third-party webhook consumer to act without making additional API calls.
+  * Each event carries enough context for a third-party webhook consumer to act without making
+  * additional API calls.
   */
 enum DomainEvent derives CanEqual {
+
   case ContributionMade(
       memberId: UUID,
       circleId: UUID,
@@ -20,6 +25,7 @@ enum DomainEvent derives CanEqual {
       currency: String,
       occurredAt: Instant
   )
+
   case TransferSettled(
       transferId: UUID,
       fromUserId: UUID,
@@ -28,6 +34,7 @@ enum DomainEvent derives CanEqual {
       currency: String,
       occurredAt: Instant
   )
+
   case LoanApproved(
       loanId: UUID,
       userId: UUID,
@@ -36,11 +43,13 @@ enum DomainEvent derives CanEqual {
       dueDateIso: String,
       occurredAt: Instant
   )
+
   case KycStatusChanged(
       userId: UUID,
       newStatus: String,
       occurredAt: Instant
   )
+
   case ConsentGranted(
       consentId: UUID,
       userId: UUID,
@@ -48,6 +57,7 @@ enum DomainEvent derives CanEqual {
       scopes: List[String],
       occurredAt: Instant
   )
+
   case BnplPlanCreated(
       planId: UUID,
       userId: UUID,
@@ -57,47 +67,55 @@ enum DomainEvent derives CanEqual {
       instalmentCount: Int,
       occurredAt: Instant
   )
+
 }
 
 object DomainEvent {
-  given JsonEncoder[Instant] = JsonEncoder.string.contramap(_.toString)
-  given JsonDecoder[Instant] = JsonDecoder.string.map(Instant.parse)
+
+  given JsonEncoder[Instant]   = JsonEncoder.string.contramap(_.toString)
+  given JsonDecoder[Instant]   = JsonDecoder.string.map(Instant.parse)
   given JsonCodec[DomainEvent] = DeriveJsonCodec.gen[DomainEvent]
+
 }
 
 // ── Webhook subscription ─────────────────────────────────────────────────────
 
 opaque type SubscriptionId = UUID
 object SubscriptionId {
-  def apply(u: UUID): SubscriptionId = u
+
+  def apply(u: UUID): SubscriptionId    = u
   def unapply(id: SubscriptionId): UUID = id
-  def random: UIO[SubscriptionId] = Random.nextUUID
+  def random: UIO[SubscriptionId]       = Random.nextUUID
 
   extension (id: SubscriptionId) def value: UUID = id
 
   given CanEqual[SubscriptionId, SubscriptionId] = CanEqual.derived
-  given JsonEncoder[SubscriptionId] = JsonEncoder.uuid
-  given JsonDecoder[SubscriptionId] = JsonDecoder.uuid
+  given JsonEncoder[SubscriptionId]              = JsonEncoder.uuid
+  given JsonDecoder[SubscriptionId]              = JsonDecoder.uuid
+
 }
 
-/** A webhook subscription registered by a third-party (TPP or internal service).
+/**
+  * A webhook subscription registered by a third-party (TPP or internal service).
   *
   * @param eventTypes
   *   Which event types to deliver. Empty set = all events.
   * @param secret
-  *   HMAC-SHA256 signing secret for payload verification. Stored hashed; the raw secret is shown only at creation time.
+  *   HMAC-SHA256 signing secret for payload verification. Stored hashed; the raw secret is shown
+  *   only at creation time.
   */
 final case class WebhookSubscription(
     id: SubscriptionId,
     tppClientId: String,
     targetUrl: String,
     eventTypes: Set[String], // empty = subscribe to all
-    secretHash: String, // SHA-256 of the raw signing secret
+    secretHash: String,      // SHA-256 of the raw signing secret
     active: Boolean,
     createdAt: Instant
 ) derives JsonCodec
 
-/** A delivery attempt for a single domain event.
+/**
+  * A delivery attempt for a single domain event.
   */
 enum DeliveryStatus derives CanEqual, JsonCodec {
   case Pending, Delivered, Failed
@@ -115,10 +133,12 @@ final case class WebhookDelivery(
 
 // ── Service ──────────────────────────────────────────────────────────────────
 
-/** Outbound webhook service.
+/**
+  * Outbound webhook service.
   *
-  * Partners register endpoint URLs via `subscribe`. Every time `emit` is called (by a service that just completed a
-  * mutation), the webhook service fans out to all matching subscribers with exponential-backoff retries.
+  * Partners register endpoint URLs via `subscribe`. Every time `emit` is called (by a service that
+  * just completed a mutation), the webhook service fans out to all matching subscribers with
+  * exponential-backoff retries.
   *
   * Payload format:
   * {{{
@@ -134,6 +154,7 @@ final case class WebhookDelivery(
   * Signature verification: `HMAC-SHA256(secret, body)` — same as GitHub webhooks.
   */
 trait WebhookService {
+
   def subscribe(
       tppClientId: String,
       targetUrl: String,
@@ -148,6 +169,7 @@ trait WebhookService {
   def deliveries(
       subscriptionId: SubscriptionId
   ): IO[AppError, List[WebhookDelivery]]
+
 }
 
 object WebhookService {
@@ -173,24 +195,24 @@ object WebhookService {
     ): IO[AppError, WebhookSubscription] =
       for {
         _ <- ZIO
-          .fail(AppError.Validation("targetUrl must start with https://"))
-          .when(!targetUrl.startsWith("https://"))
-        id <- SubscriptionId.random
-        now <- Clock.instant
+               .fail(AppError.Validation("targetUrl must start with https://"))
+               .when(!targetUrl.startsWith("https://"))
+        id     <- SubscriptionId.random
+        now    <- Clock.instant
         secretH = sha256Hex(rawSecret)
-        sub = WebhookSubscription(
-          id = id,
-          tppClientId = tppClientId,
-          targetUrl = targetUrl,
-          eventTypes = eventTypes,
-          secretHash = secretH,
-          active = true,
-          createdAt = now
-        )
+        sub     = WebhookSubscription(
+                id = id,
+                tppClientId = tppClientId,
+                targetUrl = targetUrl,
+                eventTypes = eventTypes,
+                secretHash = secretH,
+                active = true,
+                createdAt = now
+              )
         _ <- subs.update(_ + (id -> sub))
         _ <- ZIO.logInfo(
-          s"[Webhook] Subscribed id=${id.value} tpp=$tppClientId url=$targetUrl"
-        )
+               s"[Webhook] Subscribed id=${id.value} tpp=$tppClientId url=$targetUrl"
+             )
       } yield sub
 
     override def unsubscribe(
@@ -200,35 +222,35 @@ object WebhookService {
       for {
         all <- subs.get
         sub <- ZIO
-          .fromOption(all.get(id))
-          .orElseFail(AppError.NotFound(s"Subscription ${id.value} not found"))
+                 .fromOption(all.get(id))
+                 .orElseFail(AppError.NotFound(s"Subscription ${id.value} not found"))
         _ <- ZIO
-          .fail(AppError.Forbidden("Not your subscription"))
-          .when(sub.tppClientId != tppClientId)
+               .fail(AppError.Forbidden("Not your subscription"))
+               .when(sub.tppClientId != tppClientId)
         _ <- subs.update(_ + (id -> sub.copy(active = false)))
         _ <- ZIO.logInfo(s"[Webhook] Unsubscribed id=${id.value}")
       } yield ()
 
     override def emit(event: DomainEvent): UIO[Unit] = {
-      val eventType = event.getClass.getSimpleName
+      val eventType   = event.getClass.getSimpleName
       val payloadJson = event.toJson
       for {
         allSubs <- subs.get
-        matched = allSubs.values.filter { s =>
-          s.active && (s.eventTypes.isEmpty || s.eventTypes.contains(eventType))
-        }.toList
+        matched  = allSubs.values.filter { s =>
+                    s.active && (s.eventTypes.isEmpty || s.eventTypes.contains(eventType))
+                  }.toList
         _ <- ZIO.foreachParDiscard(matched) { sub =>
-          deliver(sub, eventType, payloadJson)
-            .retry(
-              Schedule.exponential(1.second) &&
-                Schedule.recurs(3)
-            )
-            .catchAll { e =>
-              ZIO.logWarning(
-                s"[Webhook] Final delivery failure sub=${sub.id.value} event=$eventType: $e"
-              )
-            }
-        }
+               deliver(sub, eventType, payloadJson)
+                 .retry(
+                   Schedule.exponential(1.second) &&
+                     Schedule.recurs(3)
+                 )
+                 .catchAll { e =>
+                   ZIO.logWarning(
+                     s"[Webhook] Final delivery failure sub=${sub.id.value} event=$eventType: $e"
+                   )
+                 }
+             }
       } yield ()
     }
 
@@ -244,27 +266,27 @@ object WebhookService {
     ): IO[Throwable, Unit] =
       for {
         deliveryId <- Random.nextUUID
-        now <- Clock.instant
+        now        <- Clock.instant
         // Compute HMAC-SHA256 signature
         sig = hmacSha256Hex(sub.secretHash, payloadJson)
         // --- stub: replace with sttp / zio-http HTTP POST to sub.targetUrl ---
         _ <- ZIO.logInfo(
-          s"[Webhook] Delivering event=$eventType to=${sub.targetUrl} " +
-            s"delivery=$deliveryId sig=$sig"
-        )
+               s"[Webhook] Delivering event=$eventType to=${sub.targetUrl} " +
+                 s"delivery=$deliveryId sig=$sig"
+             )
         record = WebhookDelivery(
-          id = deliveryId,
-          subscriptionId = sub.id,
-          eventType = eventType,
-          payloadJson = payloadJson,
-          status = DeliveryStatus.Delivered,
-          httpStatus = Some(200),
-          attemptedAt = now
-        )
+                   id = deliveryId,
+                   subscriptionId = sub.id,
+                   eventType = eventType,
+                   payloadJson = payloadJson,
+                   status = DeliveryStatus.Delivered,
+                   httpStatus = Some(200),
+                   attemptedAt = now
+                 )
         _ <- dlvs.update { m =>
-          val existing = m.getOrElse(sub.id, List.empty)
-          m + (sub.id -> (record :: existing))
-        }
+               val existing = m.getOrElse(sub.id, List.empty)
+               m + (sub.id -> (record :: existing))
+             }
       } yield ()
 
     private def sha256Hex(input: String): String = {
@@ -286,5 +308,7 @@ object WebhookService {
         .map(b => f"${b & 0xff}%02x")
         .mkString
     }
+
   }
+
 }

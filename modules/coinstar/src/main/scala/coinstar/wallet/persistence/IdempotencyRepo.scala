@@ -1,18 +1,22 @@
 package coinstar.wallet.persistence
 
+import java.time.Instant
+import java.util.UUID
+
 import coinstar.wallet.domain.{DomainError, given}
 import io.getquill.*
 import io.getquill.jdbczio.Quill
 import zio.*
 
-import java.time.Instant
-import java.util.UUID
-
 trait IdempotencyRepo {
+
   def get(userId: UUID, key: String): IO[DomainError, Option[IdempotencyRow]]
   def put(row: IdempotencyRow): IO[DomainError, Unit]
+
 }
+
 object IdempotencyRepo {
+
   def get(
       userId: UUID,
       key: String
@@ -21,8 +25,11 @@ object IdempotencyRepo {
 
   def put(row: IdempotencyRow): ZIO[IdempotencyRepo, DomainError, Unit] =
     ZIO.serviceWithZIO[IdempotencyRepo](_.put(row))
+
 }
+
 final class IdempotencyRepoLive(quill: Quill.Postgres[SnakeCase]) extends IdempotencyRepo {
+
   import quill.*
 
   private inline def table = quote(
@@ -41,8 +48,12 @@ final class IdempotencyRepoLive(quill: Quill.Postgres[SnakeCase]) extends Idempo
     run(table.insertValue(lift(row)))
       .mapError(e => DomainError.External(s"DB error: ${e.getMessage}"))
       .unit
+
 }
+
 object IdempotencyRepoLive {
+
   val layer: ZLayer[Quill.Postgres[SnakeCase], Nothing, IdempotencyRepo] =
     ZLayer.fromFunction(new IdempotencyRepoLive(_))
+
 }

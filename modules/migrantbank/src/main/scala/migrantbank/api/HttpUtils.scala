@@ -52,4 +52,5 @@ object HttpUtils {
           .map(e => error(Status.BadRequest, s"Invalid JSON: $e"))
       )
     }
+
 }

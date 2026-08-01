@@ -1,10 +1,10 @@
 package migrantbank.domain
 
-import com.augustnagro.magnum.DbCodec
-import zio.json.*
-
 import java.time.Instant
 import java.util.UUID
+
+import com.augustnagro.magnum.DbCodec
+import zio.json.*
 
 given CanEqual[UUID, UUID] = CanEqual.derived
 
@@ -13,27 +13,35 @@ final case class Money(amountMinor: Long, currency: String) derives JsonEncoder,
 enum KycStatus derives JsonEncoder, JsonDecoder, DbCodec, CanEqual {
   case PENDING, VERIFIED, REJECTED, MANUAL_REVIEW_REQUIRED
 }
+
 enum CardKind derives JsonEncoder, JsonDecoder, CanEqual {
   case VIRTUAL, PHYSICAL
 }
+
 enum CardStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case ACTIVE, BLOCKED, CLOSED
 }
+
 enum DeliveryStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case NOT_ORDERED, ORDERED, SHIPPED, DELIVERED, FAILED
 }
+
 enum TransferType derives JsonEncoder, JsonDecoder, CanEqual {
   case P2P, ACH
 }
+
 enum TransferStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case PROCESSING, COMPLETED, FAILED
 }
+
 enum LoanStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case OFFERED, ACTIVE, REPAID, DEFAULTED
 }
+
 enum TicketStatus derives JsonEncoder, JsonDecoder, CanEqual {
   case OPEN, IN_PROGRESS, CLOSED
 }
+
 final case class UserProfile(
     firstName: String,
     lastName: String,
@@ -136,6 +144,8 @@ final case class AuditEvent(
 ) derives JsonEncoder,
       JsonDecoder
 
-final case class AuthTokens(accessToken: String, refreshToken: String) derives JsonEncoder, JsonDecoder
+final case class AuthTokens(accessToken: String, refreshToken: String)
+    derives JsonEncoder,
+      JsonDecoder
 
 final case class AuthContext(userId: UUID, role: String)

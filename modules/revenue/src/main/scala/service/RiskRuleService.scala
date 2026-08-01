@@ -7,8 +7,10 @@ import revenue.repo.*
 import zio.json.ast.Json
 
 trait RiskRuleService {
+
   def list(principal: Principal): IO[ApiError, List[RiskRule]]
   def create(req: RiskRuleCreate, principal: Principal): IO[ApiError, RiskRule]
+
   def enable(
       id: RiskRuleId,
       enabled: Boolean,
@@ -16,6 +18,7 @@ trait RiskRuleService {
   ): IO[ApiError, RiskRule]
 
   def evaluate(taxType: TaxType, payload: Json): IO[ApiError, List[RiskRule]]
+
 }
 
 object RiskRuleService {
@@ -36,7 +39,7 @@ object RiskRuleService {
   val live: URLayer[RiskRuleRepo & AuditService & Clock, RiskRuleService] =
     ZLayer.fromZIO {
       for {
-        repo <- ZIO.service[RiskRuleRepo]
+        repo  <- ZIO.service[RiskRuleRepo]
         audit <- ZIO.service[AuditService]
         clock <- ZIO.service[Clock]
       } yield new RiskRuleService {
@@ -50,27 +53,27 @@ object RiskRuleService {
         ): IO[ApiError, RiskRule] = {
           for {
             now <- clock.instant.map(_.toEpochMilli)
-            id <- Random.nextUUID.map(u => RiskRuleId(u.toString))
+            id  <- Random.nextUUID.map(u => RiskRuleId(u.toString))
             rule = RiskRule(
-              id = id,
-              name = req.name,
-              enabled = true,
-              taxTypes = req.taxTypes,
-              jsonField = req.jsonField,
-              threshold = req.threshold,
-              caseType = req.caseType,
-              caseReason = req.caseReason,
-              createdAtEpochMs = now,
-              updatedAtEpochMs = now
-            )
+                     id = id,
+                     name = req.name,
+                     enabled = true,
+                     taxTypes = req.taxTypes,
+                     jsonField = req.jsonField,
+                     threshold = req.threshold,
+                     caseType = req.caseType,
+                     caseReason = req.caseReason,
+                     createdAtEpochMs = now,
+                     updatedAtEpochMs = now
+                   )
             saved <- repo.create(rule, now).mapError(ApiError.fromRepo)
-            _ <- audit.record(
-              principal,
-              "RISK_RULE_CREATED",
-              "RiskRule",
-              saved.id.value,
-              saved.name
-            )
+            _     <- audit.record(
+                   principal,
+                   "RISK_RULE_CREATED",
+                   "RiskRule",
+                   saved.id.value,
+                   saved.name
+                 )
           } yield saved
         }
 
@@ -80,17 +83,17 @@ object RiskRuleService {
             principal: Principal
         ): IO[ApiError, RiskRule] = {
           for {
-            now <- clock.instant.map(_.toEpochMilli)
+            now   <- clock.instant.map(_.toEpochMilli)
             saved <- repo
-              .setEnabled(id, enabled, now)
-              .mapError(ApiError.fromRepo)
+                       .setEnabled(id, enabled, now)
+                       .mapError(ApiError.fromRepo)
             _ <- audit.record(
-              principal,
-              if (enabled) "RISK_RULE_ENABLED" else "RISK_RULE_DISABLED",
-              "RiskRule",
-              saved.id.value,
-              saved.name
-            )
+                   principal,
+                   if (enabled) "RISK_RULE_ENABLED" else "RISK_RULE_DISABLED",
+                   "RiskRule",
+                   saved.id.value,
+                   saved.name
+                 )
           } yield saved
         }
 
@@ -101,12 +104,13 @@ object RiskRuleService {
           for {
             all <- repo.list().mapError(ApiError.fromRepo)
             hits = all.filter { r =>
-              r.enabled &&
-              r.taxTypes.forall(_.contains(taxType)) &&
-              extractNumber(payload, r.jsonField).exists(_ >= r.threshold)
-            }
+                     r.enabled &&
+                     r.taxTypes.forall(_.contains(taxType)) &&
+                     extractNumber(payload, r.jsonField).exists(_ >= r.threshold)
+                   }
           } yield hits
         }
       }
     }
+
 }

@@ -4,13 +4,14 @@ import coinstar.wallet.config.AppConfig
 import coinstar.wallet.http.RoutesV1
 import coinstar.wallet.persistence.*
 import coinstar.wallet.service.*
-import io.getquill.SnakeCase
 import io.getquill.jdbczio.Quill
+import io.getquill.SnakeCase
 import zio.*
 import zio.http.*
 import zio.logging.backend.SLF4J
 
-/** Coinstar Wallet API (starter) — Scala 3 + ZIO + ZIO HTTP + ZIO Quill.
+/**
+  * Coinstar Wallet API (starter) — Scala 3 + ZIO + ZIO HTTP + ZIO Quill.
   *
   * This skeleton focuses on:
   *   - Auth via JWT Bearer token (dev-token endpoint available ONLY in dev)
@@ -26,8 +27,10 @@ object Main extends ZIOAppDefault {
 
   private val dataSourceWithMigrations =
     Quill.DataSource.fromPrefix("db") >>> FlywayMigrate.layer
+
   val postgresLayer = Quill.Postgres.fromNamingStrategy(SnakeCase)
-  val configLayer = AppConfig.layer
+  val configLayer   = AppConfig.layer
+
   private val appLayer = {
     ZLayer.make[
       AppConfig & WalletService & RoutesV1 & AuthService & IdempotencyService
@@ -56,25 +59,26 @@ object Main extends ZIOAppDefault {
 
   override def run: ZIO[Any, Throwable, Unit] =
     (for {
-      cfg <- ZIO.service[AppConfig]
+      cfg    <- ZIO.service[AppConfig]
       routes <- ZIO.service[RoutesV1].map(_.routes)
-      _ <- ZIO.logInfo(
-        s"Starting server on port ${cfg.http.port} (env=${cfg.env})"
-      )
+      _      <- ZIO.logInfo(
+             s"Starting server on port ${cfg.http.port} (env=${cfg.env})"
+           )
       _ <- Server
-        .serve(routes)
-        .provide(
-          AppConfig.layer,
-          Server.defaultWithPort(cfg.http.port),
-          WalletRepoLive.layer,
-          LedgerRepoLive.layer,
-          VoucherRepoLive.layer,
-          IdempotencyRepoLive.layer,
-          dataSourceWithMigrations,
-          Quill.Postgres.fromNamingStrategy(SnakeCase),
-          AuthServiceLive.layer,
-          WalletServiceLive.layer,
-          IdempotencyServiceLive.layer
-        )
+             .serve(routes)
+             .provide(
+               AppConfig.layer,
+               Server.defaultWithPort(cfg.http.port),
+               WalletRepoLive.layer,
+               LedgerRepoLive.layer,
+               VoucherRepoLive.layer,
+               IdempotencyRepoLive.layer,
+               dataSourceWithMigrations,
+               Quill.Postgres.fromNamingStrategy(SnakeCase),
+               AuthServiceLive.layer,
+               WalletServiceLive.layer,
+               IdempotencyServiceLive.layer
+             )
     } yield ()).provide(AppConfig.layer, RoutesV1.layer)
+
 }

@@ -1,6 +1,7 @@
 object AuthenticationService {}
 
 abstract class AuthenticationService(userSessionManager: UserSessionManager) {
+
   def authenticate(username: String, password: String): Option[String] = {
     // Placeholder for actual authentication logic
     if (username == "user" && password == "pass") {
@@ -10,11 +11,10 @@ abstract class AuthenticationService(userSessionManager: UserSessionManager) {
     }
   }
 
-  def validateSession(sessionId: String): Option[String] = {
+  def validateSession(sessionId: String): Option[String] =
     userSessionManager.getUserId(sessionId)
-  }
 
-  def logout(sessionId: String): Unit = {
+  def logout(sessionId: String): Unit =
     userSessionManager.invalidateSession(sessionId)
-  }
+
 }

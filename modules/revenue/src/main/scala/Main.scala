@@ -1,16 +1,17 @@
 package revenue
 
 import zio.*
-import zio.http.*
 import zio.config.magnolia.*
 import zio.config.typesafe.TypesafeConfigProvider
+import zio.http.*
+import revenue.api.AppRoutes
 import revenue.domain.JwtConfig
 import revenue.repo.inmemory.*
 import revenue.service.*
-import revenue.api.AppRoutes
 
 final case class HttpConfig(host: String, port: Int) derives Config
 final case class AppConfig(http: HttpConfig, jwt: JwtCfg) derives Config
+
 final case class JwtCfg(
     issuer: String,
     audience: String,
@@ -88,4 +89,5 @@ object Main extends ZIOAppDefault {
         appLayer
       )
   }
+
 }

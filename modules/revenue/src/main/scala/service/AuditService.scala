@@ -5,6 +5,7 @@ import revenue.domain.*
 import revenue.repo.AuditRepo
 
 trait AuditService {
+
   def record(
       principal: Principal,
       action: String,
@@ -12,9 +13,11 @@ trait AuditService {
       entityId: String,
       details: String
   ): UIO[Unit]
+
 }
 
 object AuditService {
+
   val live: URLayer[AuditRepo & Clock, AuditService] =
     ZLayer.fromFunction { (repo: AuditRepo, clock: Clock) =>
       new AuditService {
@@ -33,4 +36,5 @@ object AuditService {
         }
       }
     }
+
 }
