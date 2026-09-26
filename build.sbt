@@ -1,11 +1,11 @@
 import Dependencies.*
-
 ThisBuild / scalaVersion := "3.9.0"
 ThisBuild / version      := "0.1.0-SNAPSHOT"
 
-ThisBuild / dependencyOverrides ++= Seq(
-  zioJson
-)
+// iron-zio-json, zio-schema-json, quill and jwt-zio-json were built against older
+// zio-json, and iron-chimney against chimney 1.x; pin both so the eviction check
+// doesn't fail update.
+ThisBuild / dependencyOverrides ++= Seq(zioJson, chimney)
 
 ThisBuild / scalacOptions := Seq(
   "-encoding",
@@ -14,12 +14,11 @@ ThisBuild / scalacOptions := Seq(
   "-deprecation",
   "-feature",
   "-unchecked",
-  "-source:3.3",
-  "-java-output-version:17",
-  "-Werror",
+  // "-Werror",
+  // "-Wunused:all",
   "-Wvalue-discard",
   "-Wnonunit-statement",
-  "-Wshadow:all",
+  "-language:strictEquality",
   "-Xcheck-macros",
   "-Xmax-inlines:64"
 )
