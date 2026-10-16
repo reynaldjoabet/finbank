@@ -26,7 +26,7 @@ object Dependencies {
     // --- FP ---
     val catsEffect      = "3.7.1"
     val fs2             = "3.14.0"
-    val fs2Kafka        = "4.1.2"
+    val fs2Kafka        = "4.1.3"
     val chimney         = "2.1.0"
     val iron            = "3.3.2"
     val hedgehog        = "0.13.1"
@@ -39,14 +39,14 @@ object Dependencies {
     val magnum   = "2.0.0-M3"
     val skunk    = "2.0.0-RC3"
     val hikaricp = "7.1.0"
-    val flyway   = "13.9.0"
-    val postgres = "42.7.13"
+    val flyway   = "13.10.0"
+    val postgres = "42.7.14"
 
     // --- Security ---
     val jwtScala         = "11.0.4"
     val bouncycastle     = "1.85"
     val password4j       = "1.8.4"
-    val auth0            = "4.6.1"
+    val auth0            = "4.6.2"
     val nimbusJoseJwt    = "10.10"
     val nimbusOauth2Oidc = "11.38.2"
     val vault            = "5.1.0"
@@ -57,10 +57,10 @@ object Dependencies {
     val logback = "1.6.5"
 
     // --- Cache ---
-    val caffeine = "3.3.0"
+    val caffeine = "3.3.1"
 
     // --- Observability ---
-    val datadog = "2.61.0"
+    val datadog = "2.62.0"
     val kamon   = "2.8.1"
     val otel4s  = "1.0.1"
 
@@ -69,7 +69,7 @@ object Dependencies {
 
     // --- Cloud ---
     val awsV2         = "2.47.5"
-    val azureIdentity = "1.18.6"
+    val azureIdentity = "1.18.7"
     val azureKv       = "4.11.1"
 
   }
