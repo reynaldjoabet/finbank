@@ -79,8 +79,8 @@ case class StandingOrders[Auth <: account.information.Authorization] private (ba
     val accountIdPathParam = PathSerializable.serialize("accountId", accountId, PathStyleFormat.SIMPLE, false)
     val requestURL =
       uri"$baseUrl/accounts/${accountIdPathParam}/standing-orders"
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

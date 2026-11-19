@@ -118,8 +118,8 @@ case class Balances[Auth <: account.information.Authorization] private (baseUrl:
   def getBulkBalances(xUofsConsentId: String, xFapiInteractionId: UUID, xFapiAuthDate: Option[OffsetDateTime] = scala.None, xFapiCustomerIpAddress: Option[String] = scala.None, cursor: Option[String] = scala.None, pageSize: Option[Int] = scala.None)(using Auth <:< account.information.Authorization.BearerToken): sttp.client4.Request[Either[ResponseException[String], BalanceListResponse]] =
     val requestURL =
       uri"$baseUrl/balances"
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

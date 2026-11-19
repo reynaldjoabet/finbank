@@ -183,9 +183,9 @@ case class BulkPayments[Auth <: payment.initiation.Authorization] private (baseU
     val bulkPaymentIdPathParam = PathSerializable.serialize("bulkPaymentId", bulkPaymentId, PathStyleFormat.SIMPLE, false)
     val requestURL =
       uri"$baseUrl/bulk-payments/${bulkPaymentIdPathParam}/payments"
-        .addParams(FormSerializable.serialize("status", status, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("status", status, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

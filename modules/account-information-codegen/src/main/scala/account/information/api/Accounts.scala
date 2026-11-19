@@ -127,9 +127,9 @@ case class Accounts[Auth <: account.information.Authorization] private (baseUrl:
   def getAccounts(xUofsConsentId: String, xFapiInteractionId: UUID, xFapiAuthDate: Option[OffsetDateTime] = scala.None, xFapiCustomerIpAddress: Option[String] = scala.None, xUofsPsuDeviceType: Option[String] = scala.None, accountType: Option[AccountType] = scala.None, cursor: Option[String] = scala.None, pageSize: Option[Int] = scala.None)(using Auth <:< account.information.Authorization.BearerToken): sttp.client4.Request[Either[ResponseException[String], AccountListResponse]] =
     val requestURL =
       uri"$baseUrl/accounts"
-        .addParams(FormSerializable.serialize("accountType", accountType, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("accountType", accountType, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

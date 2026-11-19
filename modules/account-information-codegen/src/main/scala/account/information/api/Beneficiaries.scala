@@ -79,8 +79,8 @@ case class Beneficiaries[Auth <: account.information.Authorization] private (bas
     val accountIdPathParam = PathSerializable.serialize("accountId", accountId, PathStyleFormat.SIMPLE, false)
     val requestURL =
       uri"$baseUrl/accounts/${accountIdPathParam}/beneficiaries"
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

@@ -137,8 +137,8 @@ case class ScheduledPayments[Auth <: payment.initiation.Authorization] private (
   def getScheduledPayments(xUofsConsentId: String, xFapiInteractionId: UUID, cursor: Option[String] = scala.None, pageSize: Option[Int] = scala.None)(using Auth <:< payment.initiation.Authorization.BearerToken): sttp.client4.Request[Either[ResponseException[String], ScheduledPaymentListResponse]] =
     val requestURL =
       uri"$baseUrl/scheduled-payments"
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

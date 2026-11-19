@@ -91,10 +91,10 @@ case class BillPayments[Auth <: payment.initiation.Authorization] private (baseU
   def getBillers(category: Option[BillerCategory] = scala.None, search: Option[String] = scala.None, cursor: Option[String] = scala.None, pageSize: Option[Int] = scala.None): sttp.client4.Request[Either[ResponseException[String], BillerListResponse]] =
     val requestURL =
       uri"$baseUrl/billers"
-        .addParams(FormSerializable.serialize("category", category, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("search", search, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("category", category, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("search", search, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)

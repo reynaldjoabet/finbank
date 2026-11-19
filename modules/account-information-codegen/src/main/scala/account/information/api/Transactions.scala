@@ -93,14 +93,14 @@ case class Transactions[Auth <: account.information.Authorization] private (base
     val accountIdPathParam = PathSerializable.serialize("accountId", accountId, PathStyleFormat.SIMPLE, false)
     val requestURL =
       uri"$baseUrl/accounts/${accountIdPathParam}/transactions"
-        .addParams(FormSerializable.serialize("fromBookingDate", fromBookingDate, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("toBookingDate", toBookingDate, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("transactionType", transactionType, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("creditDebitIndicator", creditDebitIndicator, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("minAmount", minAmount, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("maxAmount", maxAmount, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("fromBookingDate", fromBookingDate, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("toBookingDate", toBookingDate, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("transactionType", transactionType, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("creditDebitIndicator", creditDebitIndicator, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("minAmount", minAmount, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("maxAmount", maxAmount, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)
@@ -143,14 +143,14 @@ case class Transactions[Auth <: account.information.Authorization] private (base
   def getBulkTransactions(xUofsConsentId: String, xFapiInteractionId: UUID, xFapiAuthDate: Option[OffsetDateTime] = scala.None, xFapiCustomerIpAddress: Option[String] = scala.None, fromBookingDate: Option[LocalDate] = scala.None, toBookingDate: Option[LocalDate] = scala.None, transactionType: Option[TransactionType] = scala.None, creditDebitIndicator: Option[String] = scala.None, minAmount: Option[String] = scala.None, maxAmount: Option[String] = scala.None, cursor: Option[String] = scala.None, pageSize: Option[Int] = scala.None)(using Auth <:< account.information.Authorization.BearerToken): sttp.client4.Request[Either[ResponseException[String], TransactionListResponse]] =
     val requestURL =
       uri"$baseUrl/transactions"
-        .addParams(FormSerializable.serialize("fromBookingDate", fromBookingDate, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("toBookingDate", toBookingDate, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("transactionType", transactionType, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("creditDebitIndicator", creditDebitIndicator, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("minAmount", minAmount, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("maxAmount", maxAmount, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true): _*)
-        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true): _*)
+        .addParams(FormSerializable.serialize("fromBookingDate", fromBookingDate, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("toBookingDate", toBookingDate, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("transactionType", transactionType, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("creditDebitIndicator", creditDebitIndicator, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("minAmount", minAmount, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("maxAmount", maxAmount, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("cursor", cursor, FormStyleFormat.FORM, true)*)
+        .addParams(FormSerializable.serialize("pageSize", pageSize, FormStyleFormat.FORM, true)*)
 
     basicRequest
       .method(Method.GET, requestURL)
