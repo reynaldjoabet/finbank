@@ -133,21 +133,24 @@ object AccountRepo {
     sql"UPDATE accounts SET balance_minor = $newBalance WHERE id = $id".update
       .run(): Unit
 
+  /**
+    * Get-or-create the user's main account, returned locked FOR UPDATE.
+    *
+    * One round trip via PostgreSQL 19's `ON CONFLICT DO SELECT`: inserts the account, or returns
+    * (and locks) the existing one. Unlike the previous SELECT-then-INSERT, two concurrent callers
+    * cannot race into a unique violation on `uq_accounts_user_main`.
+    */
   def ensureUserAccount(userId: UUID, currency: String)(using
       DbCon
-  ): AccountRow = {
-    findByUserForUpdate(userId) match {
-      case Some(a) => a
-      case None    =>
-        val id = UUID.randomUUID()
-        sql"""INSERT INTO accounts (id, user_id, account_type, name, currency, balance_minor)
-              VALUES ($id, $userId, 'USER', 'USER_MAIN', $currency, 0)""".update
-          .run(): Unit
-        getByIdForUpdate(id).getOrElse(
-          throw new RuntimeException(s"Account $id not found after insert")
-        )
-    }
-  }
+  ): AccountRow =
+    sql"""INSERT INTO accounts (id, user_id, account_type, name, currency, balance_minor)
+          VALUES (${UUID.randomUUID()}, $userId, 'USER', 'USER_MAIN', $currency, 0)
+          ON CONFLICT (user_id) WHERE account_type = 'USER'
+          DO SELECT FOR UPDATE
+          RETURNING *"""
+      .query[AccountRow]
+      .run()
+      .head
 
   def getUserAccount(userId: UUID)(using DbCon): Option[AccountRow] =
     sql"SELECT * FROM accounts WHERE user_id = $userId AND account_type = 'USER'"
